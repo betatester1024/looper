@@ -1,0 +1,64 @@
+canvas {
+  position: absolute;
+  top:0px;
+  left: 0px;
+  touch-action: none;
+  /* pointer-events: none; */
+}
+
+details[open] {
+  height:20%;
+  /* bottom: */
+}
+
+details {
+  position: absolute;
+  bottom:0px;
+  height: 20px;
+  transition: height 0.3s;
+  width: calc(100% - 30px);
+  margin: 5px auto;
+  left: 5px;
+  background-color: var(--system-bg) !important;
+}
+
+div#topBar {
+  display: flex;
+  padding: 10px;
+  flex-wrap: wrap;
+  position: absolute !important;
+  top: 0px;
+  width: calc(100% - 20px);
+  background-color: var(--system-grey3);
+  justify-content: center;
+  align-items: center;
+  row-gap: 7px;
+  column-gap: 10px;
+}
+
+.outer::before {
+  content: "Total stress";
+  font-size: 13px;
+  font-variant-caps: small-caps;
+  position: absolute;
+  color: var(--system-blue);
+  top: -5px;
+}
+.outer {
+  width: 200px;
+  height: 30px;
+  background-color: var(--system-blue2);
+  text-align: left;
+  border-radius: 3px;
+}
+.inner {
+  background-color: var(--system-blue);
+  transition: width 0.05s;
+  white-space: nowrap;
+  height: 30px;
+  border-radius: 3px;
+  padding-left: 5px;
+  vertical-align: bottom;
+  font-size: 20px;
+  color: var(--system-black);
+}

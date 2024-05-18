@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html class="{{mainClass}}">
+  <head>
+    <script src='./utils.js'></script>
+    <script src="./redraw.js"></script>
+    <script src="./transfm.js"></script>
+    <script src="./events.js"></script>
+    <title>thing</title>
+    <script src="./game.js"> </script>
+    {{{globalTags}}}
+    <link rel="stylesheet" href="./game.css">
+    <style>
+
+    </style>
+  </head>
+  <body onload="
+    if (document.URL.at(-1) != '/') location.href+= '/';
+    globalOnload(onLoad); preLoad()">
+    <div class="main_content">
+
+      
+      <canvas id="canv"></canvas>
+      <div id="topBar">
+        <div class="outer nobreak">
+          <div class="inner nobreak" id="stressLevel">
+            Stress level
+          </div>
+        </div>
+      </div>
+      <details class="blu">
+        <summary>Footer</summary>
+        <footer id="ftrOverride"></footer>
+      </details>
+    </div>
+  </body>
+</html>

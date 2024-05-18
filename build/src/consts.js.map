@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/consts.ts"],
+  "sourcesContent": ["const argon2 = require('argon2');\nconst path = require('path')\nexport const rootDir:string = path.resolve(__dirname+\"/../../\")+\"/\";\nexport const frontendDir:string = path.resolve(__dirname+'/../../frontend/')+\"/\";\nexport const jsDir:string = path.resolve(__dirname+'/../frontend/')+\"/\"\nexport const port = 3000\nexport const userRegex = /^[0-9a-zA-Z_\\\\-]{1,20}$/\nexport const roomRegex = \"[0-9a-zA-Z_\\\\-]{1,20}\"\n// export const pwdMaxLength = 9e99\n// export const userMaxLength = 9e99\nexport const hashingOptions = {\n   type: argon2.argon2d,\n   memoryCost: 12288,\n   timeCost: 3,\n   parallelism: 1,\n   hashLength: 50\n }\n// account expiries for:    user accounts, admins,   super-admins\nexport const expiry = [0, 1000*60*60*24, 1000*60*30, 1000*60*5];\n"],
+  "mappings": ";;;;;;;;;;;;;;;;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA,MAAM,SAAS,QAAQ,QAAQ;AAC/B,MAAM,OAAO,QAAQ,MAAM;AACpB,MAAM,UAAiB,KAAK,QAAQ,YAAU,SAAS,IAAE;AACzD,MAAM,cAAqB,KAAK,QAAQ,YAAU,kBAAkB,IAAE;AACtE,MAAM,QAAe,KAAK,QAAQ,YAAU,eAAe,IAAE;AAC7D,MAAM,OAAO;AACb,MAAM,YAAY;AAClB,MAAM,YAAY;AAGlB,MAAM,iBAAiB;AAAA,EAC3B,MAAM,OAAO;AAAA,EACb,YAAY;AAAA,EACZ,UAAU;AAAA,EACV,aAAa;AAAA,EACb,YAAY;AACd;AAEM,MAAM,SAAS,CAAC,GAAG,MAAK,KAAG,KAAG,IAAI,MAAK,KAAG,IAAI,MAAK,KAAG,CAAC;",
+  "names": []
+}
