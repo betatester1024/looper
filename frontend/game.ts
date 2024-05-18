@@ -10,9 +10,15 @@ const K = {
   COLOUR_Inactive:"#555",
 
   SPEED_Base:0.3,
+  
   SIZE_Loop:40,
   SIZE_Looper:10,
   SIZE_Building:30,
+
+  TYPE_Loop:0,
+  TYPE_Building:1,
+
+  TIME_Tooltip: 500,
 
   STRESS_Base:1, // 5 stress/sec
 
@@ -52,161 +58,6 @@ interface AttackInfo {
   power:number,
 }
 
-abstract class Building {
-  static type:number = -1;
-  abstract computeAttack():void
-  abstract chargePercentage():number
-}
-
-class Slow extends Building {
-  static type = 0;
-  position:Point
-  constructor(loc:Point) {
-    super();
-    this.position = loc;
-  }
-  chargeStart = -1;
-  chargeTime = 1000;
-  cooldown = 2000;
-  power = 10;
-  poweringDown = false;
-  computeAttack() {
-    let time = Date.now();
-    if (this.chargeStart < 0) return [];
-    if (this.poweringDown) {
-      if (time - this.chargeStart > this.cooldown) {
-        this.poweringDown = false;
-        this.chargeStart = -1;
-      }
-      return [];
-    }
-    if (time - this.chargeStart > this.chargeTime) {
-      let available = loopersAt(this.position);
-      this.poweringDown = true;
-      this.chargeStart = Date.now();
-      if (available.length > 0) 
-      {
-        let idx = rand(available)
-        let target = loopers[idx] as Looper;
-        target.health -= this.power;
-        if (target.health <= 0) {
-          loopers.splice(idx, 1);
-        }
-      }
-      else return [];
-    }  
-    return [];
-  }
-  getStress() {
-    
-  }
-  chargePercentage() { // continuously called
-    let time = Date.now();
-    if (this.chargeStart < 0 && loopersAt(this.position).length > 0) {
-      this.chargeStart = Date.now();
-      return 0; 
-    }
-    else if (this.chargeStart > 0) 
-      if (this.poweringDown)
-        return -(1 - (time - this.chargeStart) / this.cooldown);
-      else 
-        return (time - this.chargeStart) / this.chargeTime;
-    else return 0;
-  }
-}
-class Continuous extends Building {
-  static type = 1;
-  position:Point;
-  constructor(loc:Point) {
-    super();
-    this.position = loc;
-  }
-  power = 20;
-  lastAttack = Date.now();
-  computeAttack() {
-    let time = Date.now();
-    let delta = (time - this.lastAttack)/1000;
-    this.lastAttack = time;
-    let toRemove = [];
-    for (let l of loopersAt(this.position)) {
-      loopers[l].health -= delta*this.power;
-      if (loopers[l].health < 0) {
-        toRemove.push(loopers[l]);
-      }
-    }
-    for (let looper of toRemove)
-      loopers.splice(loopers.indexOf(looper), 1);
-  }
-  chargePercentage() {return loopersAt(this.position).length>0?1:0;}
-}
-
-class MultiShot extends Building {
-  static type = 2;
-  position:Point;
-  constructor(loc:Point) {
-    super();
-    this.position = loc;
-  }
-  power = 30;
-  attackCt = 2;
-  lastAttack = Date.now();
-  chargeTime = 5000;
-  chargeStart = -1;
-  computeAttack() {
-    if (this.chargeStart < 0) {
-      if (loopersAt(this.position).length > 0) 
-        this.chargeStart = Date.now();
-      return;
-    }
-    let time = Date.now();
-    if (time - this.chargeStart > this.chargeTime) {
-      this.chargeStart = -1;
-      let available = loopersAt(this.position);
-      if (available.length > 0) {
-        
-        let toRemove = [];
-        for (let i=0; i<this.attackCt; i++) { 
-          let idx = rand(available);
-          let target = loopers[idx] as Looper;
-          target.health -= this.power;
-          if (target.health <= 0) {
-            toRemove.push(loopers[idx]);
-          }
-        }
-        for (let looper of toRemove) {
-          loopers.splice(loopers.indexOf(looper), 1);
-        }
-      }
-      this.lastAttack = time;
-    }
-  }
-  chargePercentage() {
-    let time = Date.now();
-    if (this.chargeStart < 0) return 0;
-    return (time - this.chargeStart)/this.chargeTime;
-  }
-}
-
-class Destressor extends Building {
-  static type = 3;
-  position:Point;
-  constructor(loc:Point) {
-    super();
-    this.position = loc;
-  }
-  lastCalc = Date.now();
-  computeAttack() {
-    let delta = (Date.now() - this.lastCalc)/1000;
-    this.lastCalc = Date.now();
-    for (let i of loopersAt(this.position)) {
-      loopers[i].stress -= K.STRESS_Base*delta*2;
-      loopers[i].stress = Math.max(0, loopers[i].stress);
-    }
-  }
-  chargePercentage() {
-    return loopersAt(this.position).length>0?1:0;
-  }
-}
 
 interface Loop {
   loc:Point
@@ -221,14 +72,27 @@ function onLoad() {
 }
 
 let mainLoopID:any = -1;
+
+function getStaticVars(obj:Object) {
+  return Object.getPrototypeOf(obj).constructor;
+}
 function preLoad() {
   registerMaximisingCanvas("canv", 1, 0.95, redraw);
   registerEvents();
   translate(canv.width/2, canv.height/2);
-  setInterval(redraw, 0);
-  mainLoopID = setInterval(gameLoop, 0);
+  let sidebar = byId("sidebar") as HTMLDivElement;
+  for (let i=0; i<buildingTypes.length; i++) {
+    let ty = buildingTypes[i];
+    sidebar.innerHTML += `<div class="building" id="building${i}" onclick="setActiveBuilding(${i})">
+    B
+    <p class="onhover"><b>${ty.name}</b>
+    ${ty.genDesc}</p></div>`
+  }
+  setInterval(redraw, 27);
+  mainLoopID = setInterval(gameLoop, 27);
   initLooper();
 }
+
 
 function addRandomLooper() {
   let loop = rand(loops);
@@ -272,8 +136,14 @@ function gameLoop() {
   lastTime = Date.now();
   let stressLevel = byId("stressLevel") as HTMLDivElement;
   calcTotalStress();
-  stressLevel.style.width = Math.max(0.01,totalStress/maxStress)*100+"%";
-  stressLevel.innerText = "Stress: "+(totalStress/maxStress*100).toPrecision(3)+"%";
+  stressLevel.style.width = Math.min(Math.max(0.001,totalStress/maxStress), 1)*100+"%";
+  if (totalStress > maxStress*0.8) stressLevel.style.backgroundColor = getCSSProp("--system-yellowtext");
+  if (totalStress > maxStress) {
+    stressLevel.style.animation = "blinkingRed 2s infinite";
+  }
+  else stressLevel.style.animation = "";
+  if (totalStress < maxStress*0.8) stressLevel.style.backgroundColor = getCSSProp("--system-blue");
+  stressLevel.innerText = (totalStress/maxStress*100).toPrecision(3)+"%";
   for (let l of loopers) {
     let dStress = K.STRESS_Base*delta/1000;
     l.stress += dStress; 

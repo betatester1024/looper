@@ -22,11 +22,59 @@ details {
   background-color: var(--system-bg) !important;
 }
 
+.building .onhover {
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: -50px;
+  background-color: var(--system-overlay);
+  border-radius: 5px;
+  padding: 5px;
+  top: -50%;
+  transition: all 0.2s;
+  width: 200px;
+  white-space: pre-line;
+  font-size: 20px;
+}
+
+.building.active {
+  background-color: var(--system-blue2) !important;
+}
+.building {
+  cursor: pointer;
+  padding: 10px;
+  position: relative;
+  font-size: 30px;
+  color: var(--system-blue);
+  font-family: 'Noto Sans Display';
+}
+
+.building:hover {
+  background-color: var(--system-overlay);
+}
+
+.building:hover .onhover {
+  opacity: 1;
+  right: 40px;
+  pointer-events: auto;
+}
+.fsvsml {
+  font-size: 20px;
+}
+#uiElements {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  align-items: flex-end;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-color: transparent;
+}
 div#topBar {
   display: flex;
   padding: 10px;
   flex-wrap: wrap;
-  position: absolute !important;
   top: 0px;
   width: calc(100% - 20px);
   background-color: var(--system-grey3);
@@ -34,31 +82,73 @@ div#topBar {
   align-items: center;
   row-gap: 7px;
   column-gap: 10px;
+  pointer-events: auto;
+}
+
+#sidebar {
+  position: relative;
+  flex-shrink: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: fit-content;
+  pointer-events:auto;
+  padding-bottom: 10px;
+  background-color: var(--system-grey3);
 }
 
 .outer::before {
-  content: "Total stress";
   font-size: 13px;
   font-variant-caps: small-caps;
   position: absolute;
   color: var(--system-blue);
-  top: -5px;
+  top: 5px;
+}
+
+.outer:has(#stressLevel)::before {
+  content: "Total stress";
+}
+
+#tooltip {
+  position: absolute;
+  pointer-events: none;
+  opacity: 1;
+  transition: all 0.2s;
+  background-color: var(--system-overlay);
+  border-radius: 5px;
+  padding: 5px;
+  width: 200px;
+}
+#tooltip .desc {
+  white-space:pre-line;
+}
+.invis {
+  opacity: 0 !important;
 }
 .outer {
   width: 200px;
   height: 30px;
+  margin: 10px;
   background-color: var(--system-blue2);
   text-align: left;
   border-radius: 3px;
 }
 .inner {
   background-color: var(--system-blue);
-  transition: width 0.05s;
+  /* transition: width 0.05s; */
   white-space: nowrap;
+  transition:background-color 0.5s;
   height: 30px;
   border-radius: 3px;
   padding-left: 5px;
+  max-width: calc(100% - 5px);
   vertical-align: bottom;
   font-size: 20px;
   color: var(--system-black);
+}
+
+@keyframes blinkingRed {
+  0% {background-color: var(--system-red);}
+  50% {background-color: var(--system-red2);}
+  100% {background-color: var(--system-red);}
 }
