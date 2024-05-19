@@ -23,6 +23,7 @@ const K = {
   STRESS_Base:1, // 5 stress/sec
 
   PROB_Exit:0.5,
+  PROB_AddLoop:0.8,
 }
 
 let totalStress = 0;
@@ -77,7 +78,7 @@ function getStaticVars(obj:Object) {
   return Object.getPrototypeOf(obj).constructor;
 }
 function preLoad() {
-  registerMaximisingCanvas("canv", 1, 0.95, redraw);
+  registerMaximisingCanvas("canv", 1, 1, redraw);
   registerEvents();
   translate(canv.width/2, canv.height/2);
   let sidebar = byId("sidebar") as HTMLDivElement;
@@ -98,6 +99,26 @@ function addRandomLooper() {
   let loop = rand(loops);
   loopers.push({status:0, loc:{x:loop.loc.x, y:loop.loc.y}, health: 20, totalHealth:20, stress:0, 
                 loopPct:Math.random(), cw:rand([true, false]), speed:K.SPEED_Base});
+}
+
+function addRandomLoop() {
+  // n^2 :l
+  let possibleLocs = [];
+  for (let l of loops) {
+    let dx = [0,0,1,-1];
+    let dy = [1,-1,0,0];
+    for (let i=0; i<4; i++) {
+      let poss = true;
+      for (let l2 of loops) {
+        if (l2.loc.x == l.loc.x+dx[i] && l2.loc.y == l.loc.y+dy[i]) {
+          poss = false;
+          break;
+        }
+      }
+      if (poss) possibleLocs.push({x:l.loc.x+dx[i], y:l.loc.y+dy[i]});
+    }
+  }
+  loops.push({loc:rand(possibleLocs), building:null});
 }
 function initLooper() {
   loops.push({loc:{x:0, y:0}, building:null});
@@ -178,6 +199,7 @@ function gameLoop() {
     looperCt += 3;
     for (let i=0; i<looperCt; i++) 
       addRandomLooper();
+    if (Math.random() < K.PROB_AddLoop) addRandomLoop();
   }
 }
 

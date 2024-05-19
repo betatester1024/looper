@@ -11,6 +11,8 @@ function registerEvents() {
 let prevX=0, prevY=0;
 let clientPos = {x:0, y:0};
 let tooltipTimer:any = -1;
+let modifLoop:Loop|null = null;
+let modifLoopUpdated = false;
 
 function distBtw(p1:Point, p2:Point) {
   return Math.sqrt((p1.x-p2.x)*(p1.x-p2.x)+(p1.y-p2.y)*(p1.y-p2.y));
@@ -21,16 +23,56 @@ function uiEvents() {
   let tt = byId("tooltip") as HTMLDivElement;
   if (!activeTooltip.active) {
     tt.classList.add("invis");
-    return;
   }
-  tt.classList.remove("invis");
-  tt.style.left = `min(calc(100vw - 220px), ${clientPos.x + 10+"px"})`;
-  tt.style.top = clientPos.y + 10 +"px";
-  tt.innerHTML = `
-  <p><b class="fsvsml">${activeTooltip.title}</b><br>
-    <p class="desc">${activeTooltip.desc}</p>
-  </p>
-  `;
+  else {
+    tt.classList.remove("invis");
+    tt.style.left = `min(calc(100vw - 220px), ${clientPos.x + 10+"px"})`;
+    tt.style.top = clientPos.y + 10 +"px";
+    tt.innerHTML = `
+    <p><b class="fsvsml">${activeTooltip.title}</b><br>
+      <p class="desc">${activeTooltip.desc}</p>
+    </p>
+    `;
+  }
+  let upgradeMenu = byId("upgradeMenu_Inner") as HTMLDivElement;
+  if (modifLoopUpdated) {
+    modifLoopUpdated = false;
+    if (modifLoop && modifLoop.building) {
+      let title = byId("upgradeTitle") as HTMLDivElement;
+      title.innerHTML = `<p class="fsvsml">Upgrades: <b>${getStaticVars(modifLoop.building).name}</b></p>`;
+      upgradeMenu.innerHTML = "";
+      let upgrades = modifLoop.building?modifLoop.building.getUpgrades():[];
+      if (!upgrades) upgradeMenu.parentElement!.classList.add("hidden");
+      else upgradeMenu.parentElement!.classList.remove("hidden");
+      for (let i=0; i<upgrades.length; i++) {
+        let u = upgrades[i];
+        upgradeMenu.innerHTML += `
+        
+        <button 
+        onclick="${u.active?"UIPurchase("+i+")":""}" 
+        class="btn fsvsml upgrade ${u.active?"":"disabled"}">
+        <b>${u.name}</b>
+        <p>${u.active?u.desc:u.descDisabled}</p>
+        Cost: <b>${u.cost}</b>
+        </button>`;
+      }
+    } else if (modifLoop) {
+      let title = byId("upgradeTitle")  as HTMLDivElement;
+      title.innerHTML = `<p class="fsvsml">No building placed</p>`;
+      upgradeMenu.innerHTML = "<p>Select a building from the sidebar... </p>"
+      upgradeMenu.parentElement!.classList.remove("hidden");
+    } else {
+      upgradeMenu.parentElement!.classList.add("hidden");
+    }
+  }
+  
+}
+
+function UIPurchase(n:number) {
+  if (!modifLoop || !modifLoop.building)
+    ephemeralDialog("Could not find the applicable building.")
+  else modifLoop.building.upgrade(n);
+  modifLoopUpdated = true;
 }
 
 
@@ -66,6 +108,10 @@ function generateTooltip(item:Loop, type:number) {
 
 let activeBuilding = -1;
 function setActiveBuilding(id:number) {
+  if (modifLoop && !modifLoop.building) {
+    modifLoop.building = new buildingTypes[id](modifLoop.loc);
+    return;
+  }
   // this is indeed supported but ts is being weird about it :v
   //@ts-ignore
   for (let e of document.getElementsByClassName("building")) {
@@ -110,14 +156,22 @@ function onMove(ev:MouseEvent) {
 }
 
 function onPointerDown(ev:PointerEvent) {
+  let nL = nearestLoop(currPos_canv, K.SIZE_Loop)
+  if (!nL) {
+    modifLoop = null;
+    modifLoopUpdated = true;
+  }
   if (activeBuilding >= 0) {
-    let nL = nearestLoop(currPos_canv, K.SIZE_Loop)
     if (nL) {
       if (nL.building) ephemeralDialog("A building already exists here!");
       else nL.building = new buildingTypes[activeBuilding](nL.loc);
     }
     
     setActiveBuilding(-1);
+  }
+  else if (nL) {
+    modifLoop = nL; 
+    modifLoopUpdated = true;
   }
   else {
     prevX = ev.clientX;

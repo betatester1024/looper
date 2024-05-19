@@ -36,7 +36,7 @@ function redraw(time:DOMHighResTimeStamp=performance.now()) {
   for (let l of loops) {
     ctx.beginPath();
     ctx.arc(x(l.loc), y(l.loc), K.SIZE_Loop, 0, 2*Math.PI);
-    ctx.strokeStyle = K.COLOUR_Loop;
+    ctx.strokeStyle = (l == modifLoop?K.COLOUR_Active:K.COLOUR_Loop);
     ctx.stroke();
     if (l.building) {
       ctx.save();

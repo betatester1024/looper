@@ -4,6 +4,13 @@ class Building {
     static name = "Generic building.";
     static genDesc;
 }
+function tf2(n) { return n.toFixed(2); }
+;
+function roundCosts(arr) {
+    for (let i = 0; i < arr.length; i++) {
+        arr[i] = Math.round(arr[i]);
+    }
+}
 class Slow extends Building {
     type = 0;
     position;
@@ -21,12 +28,46 @@ class Slow extends Building {
     cooldown = 2000;
     power = 10;
     poweringDown = false;
+    upgradeCosts = [50, 50, 100];
     static name = "SlowShot I";
     generateDesc() {
         return `Slow-firing building. Fires at one random looper every time.
     Damage per shot: <b>${this.power}</b>
     Charge time: <b>${(this.chargeTime / 1000).toFixed(2)}</b> seconds. 
     Cooldown: <b>${(this.cooldown / 1000).toFixed(2)}</b> seconds.`;
+    }
+    getUpgrades() {
+        return [
+            { name: "Cooldown", active: this.cooldown >= 300,
+                desc: `${tf2(this.cooldown / 1000)}s > ${tf2(this.cooldown / 1000 * 0.8)}s`,
+                descDisabled: `Capped: ${tf2(this.cooldown / 1000)}s`,
+                cost: this.upgradeCosts[0] },
+            { name: "Charge time", active: this.chargeTime >= 500,
+                desc: `${tf2(this.chargeTime / 1000)}s > ${tf2(this.chargeTime / 1000 * 0.75)}s`,
+                descDisabled: `Capped: ${tf2(this.chargeTime / 1000)}s`,
+                cost: this.upgradeCosts[1] },
+            { name: "Damage", active: true,
+                desc: `${tf2(this.power)} > ${tf2(this.power * 1.2)}`,
+                descDisabled: "",
+                cost: this.upgradeCosts[2] }
+        ];
+    }
+    upgrade(type) {
+        switch (type) {
+            case 0:
+                this.cooldown *= 0.8;
+                this.upgradeCosts[0] *= 2;
+                break;
+            case 1:
+                this.chargeTime *= 0.75;
+                this.upgradeCosts[1] *= 1.3;
+                break;
+            case 2:
+                this.power *= 1.2;
+                this.upgradeCosts[2] *= 1.5;
+                break;
+        }
+        roundCosts(this.upgradeCosts);
     }
     computeAttack() {
         let time = Date.now();
@@ -85,10 +126,23 @@ class Continuous extends Building {
         this.position = loc;
     }
     power = 2;
+    upgradeCost = 200;
     lastAttack = Date.now();
     generateDesc() {
         return `Deals continuous damage to loopers.
     <b>${this.power}</b> damage/second/looper.`;
+    }
+    getUpgrades() {
+        return [
+            { name: "Damage", active: true,
+                desc: `${tf2(this.power)} > ${tf2(this.power * 1.2)}`,
+                descDisabled: "",
+                cost: this.upgradeCost }
+        ];
+    }
+    upgrade(_type) {
+        this.power *= 1.2;
+        this.upgradeCost = Math.round(this.upgradeCost * 1.4);
     }
     computeAttack() {
         let time = Date.now();
@@ -109,7 +163,7 @@ class Continuous extends Building {
 class MultiShot extends Building {
     type = 2;
     static name = "MultiShot I";
-    static genDesc = `Attacks multiple projectiles. Slow charging.
+    static genDesc = `Attacks multiple loopers. Slow charging.
     Base damage: 30
     Base target count: 2 loopers
     Charge time: 5 seconds
@@ -125,10 +179,44 @@ class MultiShot extends Building {
     chargeTime = 5000;
     chargeStart = -1;
     generateDesc() {
-        return `Attacks multiple projectiles. Slow charging.
-    Deals <b>${this.power}</b> damage to <b>${this.attackCt}</b> projectiles every shot.
+        return `Attacks multiple loopers. Slow charging.
+    Deals <b>${this.power}</b> damage to <b>${this.attackCt}</b> loopers every shot.
     Charge time: <b>${(this.chargeTime / 1000).toFixed(2)}</b> seconds.
     `;
+    }
+    upgradeCosts = [50, 75, 100];
+    getUpgrades() {
+        return [
+            { name: "Looper count", active: true,
+                desc: `${this.attackCt} > ${this.attackCt + 1}`,
+                descDisabled: "",
+                cost: this.upgradeCosts[0] },
+            { name: "Charge time", active: this.chargeTime >= 510,
+                desc: `${tf2(this.chargeTime / 1000)}s > ${tf2(this.chargeTime / 1000 * 0.75)}s`,
+                descDisabled: `Capped: ${tf2(this.chargeTime / 1000)}s`,
+                cost: this.upgradeCosts[1] },
+            { name: "Damage", active: true,
+                desc: `${tf2(this.power)} > ${tf2(this.power * 1.2)}`,
+                descDisabled: "",
+                cost: this.upgradeCosts[2] }
+        ];
+    }
+    upgrade(type) {
+        switch (type) {
+            case 0:
+                this.attackCt++;
+                this.upgradeCosts[0] *= 1.75;
+                break;
+            case 1:
+                this.chargeTime *= 0.75;
+                this.upgradeCosts[1] *= 1.3;
+                break;
+            case 2:
+                this.power *= 1.2;
+                this.upgradeCosts[2] *= 1.5;
+                break;
+        }
+        roundCosts(this.upgradeCosts);
     }
     computeAttack() {
         if (this.chargeStart < 0) {
@@ -177,6 +265,19 @@ class Destressor extends Building {
     }
     power = K.STRESS_Base * 2;
     lastCalc = Date.now();
+    upgradeCost = 75;
+    getUpgrades() {
+        return [
+            { name: "Stress reduction", active: true,
+                desc: `${this.power}/s > ${tf2(this.power * 1.2)}/s`,
+                descDisabled: "",
+                cost: this.upgradeCost },
+        ];
+    }
+    upgrade(_type) {
+        this.power *= 1.2;
+        this.upgradeCost *= 2;
+    }
     generateDesc() {
         return `Reduces stress level of every looper entering the loop.
     Reduces <b>${this.power.toFixed(2)}</b> stress/sec/looper.`;

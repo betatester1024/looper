@@ -1,3 +1,7 @@
+:root {
+  /* --hcblue:  */
+}
+
 canvas {
   position: absolute;
   top:0px;
@@ -37,9 +41,6 @@ details {
   font-size: 20px;
 }
 
-.building.active {
-  background-color: var(--system-blue2) !important;
-}
 .building {
   cursor: pointer;
   padding: 10px;
@@ -49,8 +50,52 @@ details {
   font-family: 'Noto Sans Display';
 }
 
+
+
 .building:hover {
   background-color: var(--system-overlay);
+}
+
+.btn.disabled p {
+  color: var(--system-grey);
+}
+
+#upgradeMenu {
+  max-width: unset;
+  width: fit-content;
+  border-radius: 10px 10px 0px 0px;
+  background-color: var(--system-overlay);
+  pointer-events: auto;
+  position: absolute;
+  margin: 0px auto;
+  bottom: 50px;
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  opacity: 1;
+  overflow-y: auto;
+  transition: all 0.2s;
+  padding: 20px;
+  height:fit-content;
+}
+#upgradeMenu p {
+  margin: 0px;
+}
+
+#upgradeMenu.hidden {
+  max-height: 0px;
+  opacity: 0;
+}
+
+.building.active {
+  animation: activeBlink 2s infinite ;
+  /* background-color: var(--system-blue2) !important; */
+}
+
+@keyframes activeBlink {
+  0% {background-color: var(--system-transparent);}
+  50% {background-color: var(--system-blue3);}
+  100% {background-color: var(--system-transparent);}
 }
 
 .building:hover .onhover {
@@ -113,7 +158,7 @@ div#topBar {
   position: absolute;
   pointer-events: none;
   opacity: 1;
-  transition: all 0.2s;
+  transition: all 0.5s;
   background-color: var(--system-overlay);
   border-radius: 5px;
   padding: 5px;
