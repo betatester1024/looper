@@ -2,11 +2,11 @@
 <html class="{{mainClass}}">
   <head>
     <script src='./utils.js'></script>
+    <script src="./game.js"> </script>
     <script src="./redraw.js"></script>
     <script src="./transfm.js"></script>
     <script src="./events.js"></script>
     <title>thing</title>
-    <script src="./game.js"> </script>
     <script src="./buildingInfo.js"></script>
     {{{globalTags}}}
     <link rel="stylesheet" href="./game.css">
@@ -23,14 +23,17 @@
       <canvas id="canv"></canvas>
       <div id="uiElements">
         <div id="topBar">
+          <div class="blu nohover" id="energy"></div>
           <div class="outer nobreak">
-            <div class="inner nobreak" id="stressLevel">
-              
-            </div>
+            <div class="inner nobreak" id="overloadTimer"></div>
+            <div class="inner nobreak" id="stressLevel"></div>
+          </div>
+          <div class="outer nobreak">
+            <div class="inner nobreak" id="roundTimer"></div>
           </div>
         </div>
         <div id="sidebar">
-          
+          <b id="sideHeader">Buildings</b>
         </div>
         <div id="upgradeMenu" class="hidden">
           <div id="upgradeTitle"></div>

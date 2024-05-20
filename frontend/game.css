@@ -1,5 +1,12 @@
 :root {
   /* --hcblue:  */
+  --system-red3: rgba(238, 0, 0, 0.4);
+  --system-yellow3:RGBA(255, 204, 31, 0.4);
+}
+
+#sideHeader {
+  color: var(--system-blue);
+  padding: 10px;
 }
 
 canvas {
@@ -8,6 +15,19 @@ canvas {
   left: 0px;
   touch-action: none;
   /* pointer-events: none; */
+}
+
+#overloadTimer {
+  background-color: var(--system-orange);
+  padding-left: 0px;
+  transition: width 0.2s;
+}
+
+#roundTimer {
+  /* transition: width 0.05s; */
+}
+.red2 {
+  color: var(--system-red3);
 }
 
 details[open] {
@@ -28,17 +48,21 @@ details {
 
 .building .onhover {
   opacity: 0;
-  pointer-events: none;
+  pointer-events: none !important;
   position: absolute;
-  right: -50px;
+  right: 0px;
   background-color: var(--system-overlay);
   border-radius: 5px;
   padding: 5px;
   top: -50%;
   transition: all 0.2s;
-  width: 200px;
-  white-space: pre-line;
   font-size: 20px;
+  width: 300px;
+  text-align: left;
+}
+
+.preserveLines {
+  white-space: pre-line;
 }
 
 .building {
@@ -100,7 +124,7 @@ details {
 
 .building:hover .onhover {
   opacity: 1;
-  right: 40px;
+  right: 100px;
   pointer-events: auto;
 }
 .fsvsml {
@@ -147,7 +171,7 @@ div#topBar {
   font-variant-caps: small-caps;
   position: absolute;
   color: var(--system-blue);
-  top: 5px;
+  top: -17px;
 }
 
 .outer:has(#stressLevel)::before {
@@ -177,9 +201,10 @@ div#topBar {
   background-color: var(--system-blue2);
   text-align: left;
   border-radius: 3px;
+  position:relative;
 }
 .inner {
-  background-color: var(--system-blue);
+  background-color: var(--system-blue3);
   /* transition: width 0.05s; */
   white-space: nowrap;
   transition:background-color 0.5s;
@@ -189,6 +214,7 @@ div#topBar {
   max-width: calc(100% - 5px);
   vertical-align: bottom;
   font-size: 20px;
+  position: absolute;
   color: var(--system-black);
 }
 

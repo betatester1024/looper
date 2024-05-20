@@ -12,9 +12,23 @@ let prevX = 0, prevY = 0;
 let clientPos = { x: 0, y: 0 };
 let tooltipTimer = -1;
 let modifLoop = null;
-let modifLoopUpdated = false;
+let UIRefreshRequest = K.UIREFRESH_None;
 function distBtw(p1, p2) {
     return Math.sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
+}
+let prevUpgrades = [];
+function affordabilityUpdated(upgrades) {
+    for (let u of upgrades) {
+        if (u.cost > energy)
+            u.active = false;
+    }
+    if (upgrades.length != prevUpgrades.length)
+        return true;
+    for (let i = 0; i < upgrades.length; i++) {
+        if (upgrades[i].active != prevUpgrades[i].active)
+            return true;
+    }
+    return false;
 }
 function uiEvents() {
     let activeTooltip = generateTooltip(activeItem, activeType);
@@ -33,27 +47,49 @@ function uiEvents() {
     `;
     }
     let upgradeMenu = byId("upgradeMenu_Inner");
-    if (modifLoopUpdated) {
-        modifLoopUpdated = false;
+    let en = byId("energy");
+    en.innerHTML = energy.toLocaleString() + " energy";
+    for (let i = 0; i < buildingTypes.length; i++) {
+        byId("cost" + i).innerText = buildingTypes[i].cost + " energy";
+        let b = byId("building" + i);
+        if (buildingTypes[i].cost > energy) {
+            b.classList.add("disabled");
+            byId("cost" + i).classList.add("red2");
+        }
+        else {
+            b.classList.remove("disabled");
+            byId("cost" + i).classList.remove("red2");
+        }
+    }
+    if (UIRefreshRequest != K.UIREFRESH_None &&
+        (UIRefreshRequest != K.UIREFRESH_Cost ||
+            modifLoop && modifLoop.building
+                && affordabilityUpdated(modifLoop.building.getUpgrades()))) {
         if (modifLoop && modifLoop.building) {
             let title = byId("upgradeTitle");
             title.innerHTML = `<p class="fsvsml">Upgrades: <b>${getStaticVars(modifLoop.building).name}</b></p>`;
             upgradeMenu.innerHTML = "";
-            let upgrades = modifLoop.building ? modifLoop.building.getUpgrades() : [];
+            let upgrades = modifLoop.building.getUpgrades();
+            for (let u of upgrades) {
+                if (energy < u.cost)
+                    u.active = false;
+            }
+            prevUpgrades = upgrades;
             if (!upgrades)
                 upgradeMenu.parentElement.classList.add("hidden");
             else
                 upgradeMenu.parentElement.classList.remove("hidden");
             for (let i = 0; i < upgrades.length; i++) {
                 let u = upgrades[i];
+                let cost = upgrades[i].cost;
                 upgradeMenu.innerHTML += `
         
         <button 
         onclick="${u.active ? "UIPurchase(" + i + ")" : ""}" 
         class="btn fsvsml upgrade ${u.active ? "" : "disabled"}">
         <b>${u.name}</b>
-        <p>${u.active ? u.desc : u.descDisabled}</p>
-        Cost: <b>${u.cost}</b>
+        <p>${u.active || u.cost > energy ? u.desc : u.descDisabled}</p>
+        Cost: <b class="${u.cost > energy ? "red2 nohover nooutline" : ""}">${u.cost}</b> energy
         </button>`;
             }
         }
@@ -66,14 +102,18 @@ function uiEvents() {
         else {
             upgradeMenu.parentElement.classList.add("hidden");
         }
+        UIRefreshRequest = K.UIREFRESH_None;
     }
 }
 function UIPurchase(n) {
     if (!modifLoop || !modifLoop.building)
         ephemeralDialog("Could not find the applicable building.");
-    else
+    else {
+        let cost = modifLoop.building.getUpgrades()[n].cost;
+        energy -= cost;
         modifLoop.building.upgrade(n);
-    modifLoopUpdated = true;
+    }
+    UIRefreshRequest = K.UIREFRESH_All;
 }
 function canvPos(l) {
     return { x: x(l.loc), y: y(l.loc) };
@@ -102,12 +142,24 @@ function generateTooltip(item, type) {
             return { active: false, title: "", desc: "" };
     }
 }
+function build(type, loop) {
+    if (type.cost > energy) { }
+    else if (loop.building)
+        ephemeralDialog("A building already exists here.");
+    else {
+        energy -= type.cost;
+        loop.building = new type(loop.loc);
+        UIRefreshRequest = K.UIREFRESH_All;
+    }
+}
 let activeBuilding = -1;
 function setActiveBuilding(id) {
     if (modifLoop && !modifLoop.building) {
-        modifLoop.building = new buildingTypes[id](modifLoop.loc);
+        build(buildingTypes[id], modifLoop);
         return;
     }
+    if (id >= 0 && buildingTypes[id].cost > energy)
+        return;
     for (let e of document.getElementsByClassName("building")) {
         e.classList.remove("active");
     }
@@ -155,20 +207,20 @@ function onPointerDown(ev) {
     let nL = nearestLoop(currPos_canv, K.SIZE_Loop);
     if (!nL) {
         modifLoop = null;
-        modifLoopUpdated = true;
+        UIRefreshRequest = K.UIREFRESH_All;
     }
     if (activeBuilding >= 0) {
         if (nL) {
             if (nL.building)
                 ephemeralDialog("A building already exists here!");
             else
-                nL.building = new buildingTypes[activeBuilding](nL.loc);
+                build(buildingTypes[activeBuilding], nL);
         }
         setActiveBuilding(-1);
     }
     else if (nL) {
         modifLoop = nL;
-        modifLoopUpdated = true;
+        UIRefreshRequest = K.UIREFRESH_All;
     }
     else {
         prevX = ev.clientX;

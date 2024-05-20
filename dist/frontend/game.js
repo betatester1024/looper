@@ -15,14 +15,21 @@ const K = {
     TYPE_Loop: 0,
     TYPE_Building: 1,
     TIME_Tooltip: 500,
+    TIME_Failure: 20000,
+    TIME_Round: 15000,
+    TIME_Refresh: 15,
     STRESS_Base: 1,
     PROB_Exit: 0.5,
     PROB_AddLoop: 0.8,
+    UIREFRESH_None: 0,
+    UIREFRESH_Cost: 1,
+    UIREFRESH_All: 2,
 };
 let totalStress = 0;
 let looperCt = 2;
 let maxStress = 200;
 let roundCt = 1;
+let energy = 0;
 function loopersAt(loc) {
     let out = [];
     for (let i = 0; i < loopers.length; i++) {
@@ -44,6 +51,22 @@ let mainLoopID = -1;
 function getStaticVars(obj) {
     return Object.getPrototypeOf(obj).constructor;
 }
+let globalTicks = 0;
+let paused = false;
+function timeNow() {
+    return globalTicks;
+}
+let pauseStart = -1;
+function togglePause() {
+    if (paused) {
+        mainLoopID = setInterval(gameLoop, K.TIME_Refresh);
+    }
+    else {
+        clearInterval(mainLoopID);
+    }
+    paused = !paused;
+}
+let tickCounter_lastTime = Date.now();
 function preLoad() {
     registerMaximisingCanvas("canv", 1, 1, redraw);
     registerEvents();
@@ -53,17 +76,26 @@ function preLoad() {
         let ty = buildingTypes[i];
         sidebar.innerHTML += `<div class="building" id="building${i}" onclick="setActiveBuilding(${i})">
     B
-    <p class="onhover"><b>${ty.name}</b>
-    ${ty.genDesc}</p></div>`;
+    <div class="onhover">
+    <b id="title${i}">${ty.name}</b><br>
+    <b id="cost${i}">${ty.cost} energy</b><br>
+    <p class="preserveLines">${ty.genDesc}</p></div></div>`;
     }
-    setInterval(redraw, 27);
-    mainLoopID = setInterval(gameLoop, 27);
+    setInterval(redraw, K.TIME_Refresh);
+    setInterval(() => {
+        if (!paused) {
+            globalTicks += Date.now() - tickCounter_lastTime;
+        }
+        tickCounter_lastTime = Date.now();
+    }, K.TIME_Refresh);
+    mainLoopID = setInterval(gameLoop, K.TIME_Refresh);
     initLooper();
 }
 function addRandomLooper() {
     let loop = rand(loops);
     loopers.push({ status: 0, loc: { x: loop.loc.x, y: loop.loc.y }, health: 20, totalHealth: 20, stress: 0,
-        loopPct: Math.random(), cw: rand([true, false]), speed: K.SPEED_Base });
+        loopPct: Math.random(), cw: rand([true, false]), speed: K.SPEED_Base,
+        energy: 30 });
 }
 function addRandomLoop() {
     let possibleLocs = [];
@@ -110,22 +142,47 @@ function calcTotalStress() {
         totalStress += l.stress;
     }
 }
-let lastTime = Date.now();
+let lastTime = timeNow();
+let failureStart = -1;
+let stressNotification = true;
+let nextRound = K.TIME_Round;
 function gameLoop() {
-    let delta = Date.now() - lastTime;
-    lastTime = Date.now();
+    let delta = timeNow() - lastTime;
+    nextRound -= delta;
+    if (nextRound < 0) {
+        newRound();
+    }
+    let roundTimer = byId("roundTimer");
+    roundTimer.style.width = `${(1 - nextRound / K.TIME_Round) * 100}%`;
+    roundTimer.innerText = "Round " + roundCt;
+    lastTime = timeNow();
     let stressLevel = byId("stressLevel");
+    let overloadTimer = byId("overloadTimer");
     calcTotalStress();
     stressLevel.style.width = Math.min(Math.max(0.001, totalStress / maxStress), 1) * 100 + "%";
     if (totalStress > maxStress * 0.8)
-        stressLevel.style.backgroundColor = getCSSProp("--system-yellowtext");
+        stressLevel.style.backgroundColor = getCSSProp("--system-yellow3");
     if (totalStress > maxStress) {
+        if (stressNotification) {
+            ephemeralDialog("Stress level critical - control active loopers to preserve your system!");
+            stressNotification = false;
+        }
+        if (failureStart < 0)
+            failureStart = timeNow();
+        if (timeNow() - failureStart > K.TIME_Failure) {
+            return;
+        }
+        overloadTimer.style.width = (timeNow() - failureStart) / K.TIME_Failure * 100 + "%";
         stressLevel.style.animation = "blinkingRed 2s infinite";
     }
-    else
+    else {
         stressLevel.style.animation = "";
-    if (totalStress < maxStress * 0.8)
-        stressLevel.style.backgroundColor = getCSSProp("--system-blue");
+    }
+    if (totalStress < maxStress * 0.8) {
+        stressLevel.style.backgroundColor = getCSSProp("--system-blue3");
+        failureStart = -1;
+        overloadTimer.style.width = "0%";
+    }
     stressLevel.innerText = (totalStress / maxStress * 100).toPrecision(3) + "%";
     for (let l of loopers) {
         let dStress = K.STRESS_Base * delta / 1000;
@@ -155,15 +212,18 @@ function gameLoop() {
             loop.building.computeAttack();
         }
     }
-    if (loopers.length == 0) {
-        roundCt++;
-        maxStress *= 1.05;
-        looperCt += 3;
-        for (let i = 0; i < looperCt; i++)
-            addRandomLooper();
-        if (Math.random() < K.PROB_AddLoop)
-            addRandomLoop();
-    }
+    if (loopers.length == 0)
+        newRound();
+}
+function newRound() {
+    nextRound = K.TIME_Round;
+    roundCt++;
+    maxStress *= 1.05;
+    looperCt += 3;
+    for (let i = 0; i < looperCt; i++)
+        addRandomLooper();
+    if (Math.random() < K.PROB_AddLoop)
+        addRandomLoop();
 }
 let canv;
 let ctx;

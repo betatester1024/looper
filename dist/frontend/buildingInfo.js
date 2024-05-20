@@ -3,6 +3,7 @@ class Building {
     type = -1;
     static name = "Generic building.";
     static genDesc;
+    static cost;
 }
 function tf2(n) { return n.toFixed(2); }
 ;
@@ -11,17 +12,24 @@ function roundCosts(arr) {
         arr[i] = Math.round(arr[i]);
     }
 }
+function removeLooper(l) {
+    loopers.splice(loopers.indexOf(l), 1);
+    energy += l.energy;
+    UIRefreshRequest = Math.max(UIRefreshRequest, K.UIREFRESH_Cost);
+}
 class Slow extends Building {
     type = 0;
     position;
     constructor(loc) {
         super();
+        Slow.cost *= 1.2;
         this.position = loc;
     }
+    static cost = 100;
     static genDesc = `Slow-firing building. Fires at one random looper every time.
-  Base damage: 10
-  Charge time: 1 second
-  Cooldown: 2 seconds
+  Base damage: <b>10</b>
+  Charge time: <b>1</b> second
+  Cooldown: <b>2</b> seconds
   `;
     chargeStart = -1;
     chargeTime = 1000;
@@ -70,7 +78,7 @@ class Slow extends Building {
         roundCosts(this.upgradeCosts);
     }
     computeAttack() {
-        let time = Date.now();
+        let time = timeNow();
         if (this.chargeStart < 0)
             return [];
         if (this.poweringDown) {
@@ -83,13 +91,13 @@ class Slow extends Building {
         if (time - this.chargeStart > this.chargeTime) {
             let available = loopersAt(this.position);
             this.poweringDown = true;
-            this.chargeStart = Date.now();
+            this.chargeStart = timeNow();
             if (available.length > 0) {
                 let idx = rand(available);
                 let target = loopers[idx];
                 target.health -= this.power;
                 if (target.health <= 0) {
-                    loopers.splice(idx, 1);
+                    removeLooper(loopers[idx]);
                 }
             }
             else
@@ -100,9 +108,9 @@ class Slow extends Building {
     getStress() {
     }
     chargePercentage() {
-        let time = Date.now();
+        let time = timeNow();
         if (this.chargeStart < 0 && loopersAt(this.position).length > 0) {
-            this.chargeStart = Date.now();
+            this.chargeStart = timeNow();
             return 0;
         }
         else if (this.chargeStart > 0)
@@ -118,16 +126,18 @@ class Continuous extends Building {
     type = 1;
     static name = "ContinuousShot I";
     static genDesc = `Continuous damage.
-    Base damage/sec/looper: 2
+    Base damage: <b>2</b>
     `;
     position;
     constructor(loc) {
         super();
+        Continuous.cost *= 1.2;
         this.position = loc;
     }
+    static cost = 200;
     power = 2;
     upgradeCost = 200;
-    lastAttack = Date.now();
+    lastAttack = timeNow();
     generateDesc() {
         return `Deals continuous damage to loopers.
     <b>${this.power}</b> damage/second/looper.`;
@@ -145,7 +155,7 @@ class Continuous extends Building {
         this.upgradeCost = Math.round(this.upgradeCost * 1.4);
     }
     computeAttack() {
-        let time = Date.now();
+        let time = timeNow();
         let delta = (time - this.lastAttack) / 1000;
         this.lastAttack = time;
         let toRemove = [];
@@ -155,27 +165,30 @@ class Continuous extends Building {
                 toRemove.push(loopers[l]);
             }
         }
-        for (let looper of toRemove)
-            loopers.splice(loopers.indexOf(looper), 1);
+        for (let looper of toRemove) {
+            removeLooper(looper);
+        }
     }
     chargePercentage() { return loopersAt(this.position).length > 0 ? 1 : 0; }
 }
 class MultiShot extends Building {
     type = 2;
+    static cost = 150;
     static name = "MultiShot I";
     static genDesc = `Attacks multiple loopers. Slow charging.
-    Base damage: 30
-    Base target count: 2 loopers
-    Charge time: 5 seconds
+    Base damage: <b>30</b>
+    Base target count: <b>2</b> loopers
+    Charge time: <b>5</b> seconds
     `;
     position;
     constructor(loc) {
         super();
+        MultiShot.cost *= 1.2;
         this.position = loc;
     }
     power = 30;
     attackCt = 2;
-    lastAttack = Date.now();
+    lastAttack = timeNow();
     chargeTime = 5000;
     chargeStart = -1;
     generateDesc() {
@@ -221,10 +234,10 @@ class MultiShot extends Building {
     computeAttack() {
         if (this.chargeStart < 0) {
             if (loopersAt(this.position).length > 0)
-                this.chargeStart = Date.now();
+                this.chargeStart = timeNow();
             return;
         }
-        let time = Date.now();
+        let time = timeNow();
         if (time - this.chargeStart > this.chargeTime) {
             this.chargeStart = -1;
             let available = loopersAt(this.position);
@@ -239,14 +252,14 @@ class MultiShot extends Building {
                     }
                 }
                 for (let looper of toRemove) {
-                    loopers.splice(loopers.indexOf(looper), 1);
+                    removeLooper(looper);
                 }
             }
             this.lastAttack = time;
         }
     }
     chargePercentage() {
-        let time = Date.now();
+        let time = timeNow();
         if (this.chargeStart < 0)
             return 0;
         return (time - this.chargeStart) / this.chargeTime;
@@ -254,17 +267,19 @@ class MultiShot extends Building {
 }
 class Destressor extends Building {
     type = 3;
+    static cost = 175;
     static name = "Destressor";
     static genDesc = `Reduces stress level of every looper in range.
-     Base effect: -${K.STRESS_Base * 2} stress/sec
+     Base effect: -<b>${K.STRESS_Base * 2}</b> stress/sec
     `;
     position;
     constructor(loc) {
         super();
+        Destressor.cost *= 1.2;
         this.position = loc;
     }
     power = K.STRESS_Base * 2;
-    lastCalc = Date.now();
+    lastCalc = timeNow();
     upgradeCost = 75;
     getUpgrades() {
         return [
@@ -283,8 +298,8 @@ class Destressor extends Building {
     Reduces <b>${this.power.toFixed(2)}</b> stress/sec/looper.`;
     }
     computeAttack() {
-        let delta = (Date.now() - this.lastCalc) / 1000;
-        this.lastCalc = Date.now();
+        let delta = (timeNow() - this.lastCalc) / 1000;
+        this.lastCalc = timeNow();
         for (let i of loopersAt(this.position)) {
             loopers[i].stress -= this.power * delta;
             loopers[i].stress = Math.max(0, loopers[i].stress);
