@@ -23,7 +23,7 @@ class Slow extends Building {
     position;
     constructor(loc) {
         super();
-        Slow.cost = Math.floor(Slow.cost * 1.5);
+        updateCosts(Slow);
         this.position = loc;
     }
     static cost = 100;
@@ -132,11 +132,11 @@ class Continuous extends Building {
     position;
     constructor(loc) {
         super();
-        Continuous.cost = Math.floor(Continuous.cost * 1.5);
+        updateCosts(Continuous);
         this.position = loc;
     }
     static cost = 200;
-    power = 2;
+    power = 5;
     upgradeCost = 200;
     lastAttack = timeNow();
     generateDesc() {
@@ -157,9 +157,11 @@ class Continuous extends Building {
     }
     computeAttack() {
         let time = timeNow();
+        let delta = (time - this.lastAttack) / 1000;
+        this.lastAttack = time;
         let toRemove = [];
         for (let l of loopersAt(this.position)) {
-            loopers[l].health -= this.power;
+            loopers[l].health -= delta * this.power;
             if (loopers[l].health < 0) {
                 toRemove.push(loopers[l]);
             }
@@ -182,7 +184,7 @@ class MultiShot extends Building {
     position;
     constructor(loc) {
         super();
-        MultiShot.cost = Math.floor(MultiShot.cost * 1.5);
+        updateCosts(MultiShot);
         this.position = loc;
     }
     power = 30;
@@ -274,7 +276,7 @@ class Destressor extends Building {
     position;
     constructor(loc) {
         super();
-        Destressor.cost = Math.floor(Destressor.cost * 1.5);
+        updateCosts(Destressor);
         this.position = loc;
     }
     power = K.STRESS_Base * 2;
@@ -319,7 +321,7 @@ class FastShooter extends Building {
     position;
     constructor(loc) {
         super();
-        FastShooter.cost = Math.floor(FastShooter.cost * 1.5);
+        updateCosts(FastShooter);
         this.position = loc;
     }
     power = 2;
@@ -382,6 +384,12 @@ class FastShooter extends Building {
         if (this.chargeStart < 0)
             return 0;
         return (time - this.chargeStart) / this.chargeTime;
+    }
+}
+function updateCosts(ty) {
+    ty.cost = Math.floor(ty.cost * 1.4);
+    for (let t of buildingTypes) {
+        t.cost = Math.floor(t.cost * 1.1);
     }
 }
 let buildingTypes = [Slow, Continuous, MultiShot, Destressor, FastShooter];

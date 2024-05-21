@@ -21,9 +21,9 @@ const K = {
 
   TIME_Tooltip: 500,
   TIME_Failure:20000,
-  TIME_Round:15000,
+  TIME_Round:30000,
   TIME_Refresh:15,
-  TIME_SellBuilding:10000,
+  TIME_SellBuilding:45000,
 
   MISC_CostRecovery:0.75,
 
@@ -41,7 +41,9 @@ let totalStress = 0;
 let looperCt = 2;
 let maxStress = 200;
 let roundCt = 1;
-let energy = 0;
+let energy = 300;
+let minLooperHealth = 10;
+let maxLooperHealth = 30;
 
 interface Looper {
   energy:number,
@@ -148,7 +150,8 @@ function preLoad() {
 
 function addRandomLooper() {
   let loop = rand(loops);
-  loopers.push({status:0, loc:{x:loop.loc.x, y:loop.loc.y}, health: 20, totalHealth:20, stress:0, 
+  let looperHealth = minLooperHealth + Math.random()*(maxLooperHealth-minLooperHealth);
+  loopers.push({status:0, loc:{x:loop.loc.x, y:loop.loc.y}, health: looperHealth, totalHealth:looperHealth, stress:0, 
                 loopPct:Math.random(), cw:rand([true, false]), speed:K.SPEED_Base,
                energy:30});
 }
@@ -174,15 +177,7 @@ function addRandomLoop() {
 }
 function initLooper() {
   loops.push({loc:{x:0, y:0}, building:null});
-  loops.push({loc:{x:1, y:0}, building:null});
-  loops.push({loc:{x:0, y:1}, building:new Destressor({x:0, y:1})});
-  loops.push({loc:{x:0, y:-1}, building:new MultiShot({x:0, y:-1})});
-  loops.push({loc:{x:2, y:0}, building:new Continuous({x:2, y:0})});
-  loops.push({loc:{x:-1, y:0}, building:new Slow({x:-1, y:0})});
-  for (let i=0; i<5; i++)
-    addRandomLooper();
-  
-  
+  addRandomLooper();
 }
 
 function modPos(v:number, m:number) {
@@ -228,7 +223,6 @@ function gameLoop() {
       stressNotification = false;
     }
     failureTime += delta;
-    console.log(delta);
     if (failureTime > K.TIME_Failure) {
       ephemeralDialog("You lose.");
       togglePause()
@@ -279,8 +273,9 @@ function gameLoop() {
 function newRound() {
   nextRound = K.TIME_Round;
   roundCt++;
+  maxLooperHealth += 4;
   maxStress *= 1.05;
-  looperCt += 3;
+  looperCt = Math.min(30, looperCt+2);
   for (let i=0; i<looperCt; i++) 
     addRandomLooper();
   if (Math.random() < K.PROB_AddLoop) addRandomLoop();
