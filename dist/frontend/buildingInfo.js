@@ -4,6 +4,7 @@ class Building {
     static name = "Generic building.";
     static genDesc;
     static cost;
+    value = 0;
 }
 function tf2(n) { return n.toFixed(2); }
 ;
@@ -156,11 +157,9 @@ class Continuous extends Building {
     }
     computeAttack() {
         let time = timeNow();
-        let delta = (time - this.lastAttack) / 1000;
-        this.lastAttack = time;
         let toRemove = [];
         for (let l of loopersAt(this.position)) {
-            loopers[l].health -= delta * this.power;
+            loopers[l].health -= this.power;
             if (loopers[l].health < 0) {
                 toRemove.push(loopers[l]);
             }
@@ -187,7 +186,7 @@ class MultiShot extends Building {
         this.position = loc;
     }
     power = 30;
-    attackCt = 2;
+    attackCt = 1;
     lastAttack = timeNow();
     chargeTime = 5000;
     chargeStart = -1;
@@ -197,7 +196,7 @@ class MultiShot extends Building {
     Charge time: <b>${(this.chargeTime / 1000).toFixed(2)}</b> seconds.
     `;
     }
-    upgradeCosts = [50, 75, 100];
+    upgradeCosts = [100, 75, 100];
     getUpgrades() {
         return [
             { name: "Looper count", active: true,
@@ -269,7 +268,7 @@ class Destressor extends Building {
     type = 3;
     static cost = 175;
     static name = "Destressor";
-    static genDesc = `Reduces stress level of every looper n range.
+    static genDesc = `Reduces stress level of every looper in range.
      Base effect: -<b>${K.STRESS_Base * 2}</b> stress/sec
     `;
     position;
@@ -284,7 +283,7 @@ class Destressor extends Building {
     getUpgrades() {
         return [
             { name: "Stress reduction", active: true,
-                desc: `${this.power}/s > ${tf2(this.power * 1.2)}/s`,
+                desc: `${tf2(this.power)}/s > ${tf2(this.power * 1.2)}/s`,
                 descDisabled: "",
                 cost: this.upgradeCost },
         ];
@@ -309,5 +308,81 @@ class Destressor extends Building {
         return loopersAt(this.position).length > 0 ? 1 : 0;
     }
 }
-let buildingTypes = [Slow, Continuous, MultiShot, Destressor];
+class FastShooter extends Building {
+    type = 4;
+    static cost = 175;
+    static name = "FastShot I";
+    static genDesc = `Rapid firing but low damage.
+     Base damage: <b>2</b>
+     Base cooldown: <b>0.5s</b>
+    `;
+    position;
+    constructor(loc) {
+        super();
+        FastShooter.cost = Math.floor(FastShooter.cost * 1.5);
+        this.position = loc;
+    }
+    power = 2;
+    lastCalc = timeNow();
+    upgradeCosts = [75, 100];
+    chargeStart = -1;
+    chargeTime = 500;
+    getUpgrades() {
+        return [
+            { name: "Damage", active: true,
+                desc: `${tf2(this.power)} > ${tf2(this.power * 1.2)}`,
+                descDisabled: "",
+                cost: this.upgradeCosts[0] },
+            { name: "Cooldown", active: this.chargeTime >= 120,
+                desc: `${tf2(this.chargeTime / 1000)}s > ${tf2(this.chargeTime * 0.8 / 1000)}s`,
+                descDisabled: "",
+                cost: this.upgradeCosts[1] },
+        ];
+    }
+    upgrade(type) {
+        switch (type) {
+            case 0:
+                this.power *= 1.2;
+                this.upgradeCosts[0] *= 1.5;
+                break;
+            case 1:
+                this.chargeTime *= 0.8;
+                this.upgradeCosts[1] *= 2;
+                break;
+        }
+        roundCosts(this.upgradeCosts);
+    }
+    generateDesc() {
+        return `Fires at one random looper every <b>${tf2(this.chargeTime / 1000)}</b>s.
+    Damage: <b>${this.power}</b>`;
+    }
+    computeAttack() {
+        if (this.chargeStart < 0) {
+            if (loopersAt(this.position).length > 0)
+                this.chargeStart = timeNow();
+            return;
+        }
+        let time = timeNow();
+        if (time - this.chargeStart > this.chargeTime) {
+            this.chargeStart = -1;
+            let available = loopersAt(this.position);
+            if (available.length > 0) {
+                let toRemove = [];
+                let idx = rand(available);
+                let target = loopers[idx];
+                target.health -= this.power;
+                if (target.health <= 0) {
+                    removeLooper(loopers[idx]);
+                }
+            }
+        }
+    }
+    chargePercentage() {
+        let time = timeNow();
+        if (this.chargeStart < 0)
+            return 0;
+        return (time - this.chargeStart) / this.chargeTime;
+    }
+}
+let buildingTypes = [Slow, Continuous, MultiShot, Destressor, FastShooter];
 //# sourceMappingURL=buildingInfo.js.map

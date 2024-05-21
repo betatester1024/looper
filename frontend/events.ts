@@ -1,12 +1,69 @@
 function registerEvents() {
-  canv.addEventListener("pointermove", onMove);
-  canv.addEventListener("pointerdown", onPointerDown);
+  canv.addEventListener("mousemove", evRedirector_pMove);
+  canv.addEventListener("touchmove", evRedirector_pMove);
+  canv.addEventListener("mousedown", evRedirector_pDown);
+  canv.addEventListener("touchstart", evRedirector_pDown);
   window.addEventListener("keydown", keyUpdate);
   window.addEventListener("keyup", keyUpdate);
-  window.addEventListener("pointerup", onPointerUp);
+  window.addEventListener("mouseup", onPointerUp);
+  window.addEventListener("touchend", onPointerUp);
   canv.addEventListener("wheel", onWheel)
   setInterval(uiEvents, 100);
+
+  vis(()=>{
+    if (!vis() && !paused) togglePause();
+  })
 }
+
+function evRedirector_pMove(event:MouseEvent|TouchEvent) {
+  if (event.type.startsWith('touch')) {
+    event.preventDefault();
+    console.log("touch move");
+    event = event as TouchEvent;
+    onMove({x:event.touches[0].clientX, y:event.touches[0].clientY});
+  } else {
+    // For mouse events
+    event = event as MouseEvent;
+    onMove({x:event.clientX, y:event.clientY});
+  }
+}
+
+function evRedirector_pDown(event:TouchEvent|MouseEvent) {
+  if (event.type.startsWith('touch')) {
+    event.preventDefault();
+    console.log("touch event");
+    event = event as TouchEvent;
+    let p = {x:event.touches[0].clientX, y:event.touches[0].clientY};
+    onPointerDown(p);
+    
+  } else {
+    // For mouse events
+    event = event as MouseEvent;
+    onPointerDown({x:event.clientX, y:event.clientY});
+  }
+} 
+
+var vis = (function(){
+    var stateKey="", eventKey="", keys = {
+        hidden: "visibilitychange",
+        webkitHidden: "webkitvisibilitychange",
+        mozHidden: "mozvisibilitychange",
+        msHidden: "msvisibilitychange"
+    };
+    for (stateKey in keys) {
+        if (stateKey in document) {
+            //@ts-ignore
+            eventKey = keys[stateKey];
+            break;
+        }
+    }
+    return function(c?:()=>any) {
+        if (c) document.addEventListener(eventKey, c);
+        //@ts-ignore
+        return !document[stateKey];
+    }
+})();
+
 
 let prevX=0, prevY=0;
 let clientPos = {x:0, y:0};
@@ -30,6 +87,7 @@ function affordabilityUpdated(upgrades:Upgrade[]) {
   return false;
 }
 
+let sellTime = -1;
 function uiEvents() {
   let activeTooltip = generateTooltip(activeItem!, activeType);
   let tt = byId("tooltip") as HTMLDivElement;
@@ -48,7 +106,7 @@ function uiEvents() {
   }
   let upgradeMenu = byId("upgradeMenu_Inner") as HTMLDivElement;
   let en = byId("energy") as HTMLDivElement;
-  en.innerHTML = energy.toLocaleString()+" energy";
+  en.innerHTML = Math.floor(energy).toLocaleString()+" energy";
 
   for (let i=0; i<buildingTypes.length; i++) {
     byId("cost"+i)!.innerText = buildingTypes[i].cost+" energy";
@@ -62,7 +120,23 @@ function uiEvents() {
       byId("cost"+i)!.classList.remove("red2");
     }
   }
-  
+
+  let sellEle = byId("sellBuilding") as HTMLDivElement;
+  if (sellEle) {
+    if (timeNow() > sellTime) {
+      if (sellEle.classList.contains("disabled")) {
+        sellEle.classList.remove("disabled");
+        sellEle.outerHTML = getSellButton();
+        UIRefreshRequest = K.UIREFRESH_All;
+      }
+    }
+    else {
+      sellEle.outerHTML = getSellButton();
+      if(!sellEle.classList.contains("disabled"))
+        sellEle.classList.add("disabled");
+    }
+    
+  }  
   if (UIRefreshRequest != K.UIREFRESH_None &&
      (UIRefreshRequest != K.UIREFRESH_Cost || 
       modifLoop && modifLoop.building 
@@ -93,6 +167,7 @@ function uiEvents() {
         Cost: <b class="${u.cost > energy?"red2 nohover nooutline":""}">${u.cost}</b> energy
         </button>`;
       }
+      upgradeMenu.innerHTML += getSellButton();
     } else if (modifLoop) {
       let title = byId("upgradeTitle")  as HTMLDivElement;
       title.innerHTML = `<p class="fsvsml">No building placed</p>`;
@@ -106,6 +181,24 @@ function uiEvents() {
   
 }
 
+function getSellButton() {
+  if (!modifLoop) return "";
+  if (!modifLoop.building) return "";
+  return `<button id="sellBuilding" class="btn blu fsvsml upgrade ${sellTime > timeNow()?"disabled":""}" onclick="sellBuilding()">
+    Sell building <br>
+    ${sellTime > timeNow()?toTime(sellTime - timeNow()):
+      `<b>${tf2(modifLoop.building.value*K.MISC_CostRecovery)}</b> energy`}
+  </button>`;
+}
+function sellBuilding() {
+  if (sellTime > timeNow()) return;
+  if (!modifLoop) return;
+  energy += modifLoop.building!.value*K.MISC_CostRecovery;
+  modifLoop.building = null;
+  sellTime = timeNow() + K.TIME_SellBuilding;
+  UIRefreshRequest = K.UIREFRESH_All;
+}
+
 function UIPurchase(n:number) {
   if (!modifLoop || !modifLoop.building)
     ephemeralDialog("Could not find the applicable building.")
@@ -113,6 +206,7 @@ function UIPurchase(n:number) {
     let cost = modifLoop.building.getUpgrades()[n].cost;
     energy -= cost;
     modifLoop.building.upgrade(n);
+    modifLoop.building.value += cost;
   }
   UIRefreshRequest = K.UIREFRESH_All;
 }
@@ -159,6 +253,7 @@ function build(type:any, loop:Loop) {
     energy -= type.cost;
     loop.building = new type(loop.loc);
     UIRefreshRequest = K.UIREFRESH_All;
+    loop.building!.value = type.cost;
   }
 }
 let activeBuilding = -1;
@@ -187,9 +282,9 @@ function activateTooltip() {
   else activeType = -1;
 }
 
-function onMove(ev:MouseEvent) {
-  clientPos = {x:ev.clientX, y:ev.clientY};
-  currPos_canv = fromCanvPos(ev.clientX, ev.clientY);
+function onMove(ev:Point) {
+  clientPos = {x:ev.x, y:ev.y};
+  currPos_canv = fromCanvPos(ev.x, ev.y);
   if (holdState == K.HOLD_None) {
     activeType = -1;
     let nearestL = nearestLoop(currPos_canv, K.SIZE_Loop);
@@ -204,14 +299,15 @@ function onMove(ev:MouseEvent) {
     }
   }
   if (holdState == K.HOLD_Translate) {
-    translate(ev.clientX - prevX, ev.clientY - prevY);
-    prevX = ev.clientX;
-    prevY = ev.clientY;
+    translate(ev.x - prevX, ev.y - prevY);
+    prevX = ev.x;
+    prevY = ev.y;
     redraw();
   }
 }
 
-function onPointerDown(ev:PointerEvent) {
+function onPointerDown(ev:Point) {
+  currPos_canv = fromCanvPos(ev.x, ev.y);
   let nL = nearestLoop(currPos_canv, K.SIZE_Loop)
   if (!nL) {
     modifLoop = null;
@@ -229,8 +325,8 @@ function onPointerDown(ev:PointerEvent) {
     UIRefreshRequest = K.UIREFRESH_All;
   }
   else {
-    prevX = ev.clientX;
-    prevY = ev.clientY;
+    prevX = ev.x;
+    prevY = ev.y;
 
     canv.style.cursor = "all-scroll"
     holdState = K.HOLD_Translate;
@@ -238,7 +334,7 @@ function onPointerDown(ev:PointerEvent) {
   console.log("pointerdown")
 }
 
-function onPointerUp(ev:PointerEvent) {
+function onPointerUp(ev:any) {
   holdState = K.HOLD_None;
   canv.style.cursor = "default";
   console.log("pointerup")

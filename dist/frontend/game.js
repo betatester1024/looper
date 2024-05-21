@@ -7,6 +7,7 @@ const K = {
     COLOUR_Looper: "#c00",
     COLOUR_Building: "#00c",
     COLOUR_Active: "#0c0",
+    COLOUR_Select: "#0cc",
     COLOUR_Inactive: "#555",
     SPEED_Base: 0.3,
     SIZE_Loop: 40,
@@ -18,6 +19,8 @@ const K = {
     TIME_Failure: 20000,
     TIME_Round: 15000,
     TIME_Refresh: 15,
+    TIME_SellBuilding: 10000,
+    MISC_CostRecovery: 0.75,
     STRESS_Base: 1,
     PROB_Exit: 0.5,
     PROB_AddLoop: 0.8,
@@ -60,10 +63,19 @@ let pauseStart = -1;
 function togglePause() {
     if (paused) {
         document.title = "thing";
+        byId("playpause").innerHTML = "pause";
         mainLoopID = setInterval(gameLoop, K.TIME_Refresh);
+        byId("roundTimer").style.backgroundColor = getCSSProp("--system-blue3");
     }
     else {
+        byId("playpause").innerHTML = "play_arrow";
         document.title = "thing (paused)";
+        let sL = byId("stressLevel");
+        let rT = byId("roundTimer");
+        sL.innerHTML += " (paused)";
+        sL.style.backgroundColor = getCSSProp("--system-grey2");
+        rT.innerHTML += " (paused)";
+        rT.style.backgroundColor = getCSSProp("--system-grey2");
         clearInterval(mainLoopID);
     }
     paused = !paused;
