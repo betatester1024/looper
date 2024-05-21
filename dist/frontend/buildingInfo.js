@@ -4,6 +4,7 @@ class Building {
     static name = "Generic building.";
     static genDesc;
     static cost;
+    buildTime;
     value = 0;
 }
 function tf2(n) { return n.toFixed(2); }
@@ -23,7 +24,7 @@ class Slow extends Building {
     position;
     constructor(loc) {
         super();
-        updateCosts(Slow);
+        initBuilding(Slow, this);
         this.position = loc;
     }
     static cost = 100;
@@ -132,7 +133,7 @@ class Continuous extends Building {
     position;
     constructor(loc) {
         super();
-        updateCosts(Continuous);
+        initBuilding(Continuous, this);
         this.position = loc;
     }
     static cost = 200;
@@ -184,7 +185,7 @@ class MultiShot extends Building {
     position;
     constructor(loc) {
         super();
-        updateCosts(MultiShot);
+        initBuilding(MultiShot, this);
         this.position = loc;
     }
     power = 30;
@@ -276,7 +277,7 @@ class Destressor extends Building {
     position;
     constructor(loc) {
         super();
-        updateCosts(Destressor);
+        initBuilding(Destressor, this);
         this.position = loc;
     }
     power = K.STRESS_Base * 2;
@@ -321,7 +322,7 @@ class FastShooter extends Building {
     position;
     constructor(loc) {
         super();
-        updateCosts(FastShooter);
+        initBuilding(FastShooter, this);
         this.position = loc;
     }
     power = 2;
@@ -386,7 +387,8 @@ class FastShooter extends Building {
         return (time - this.chargeStart) / this.chargeTime;
     }
 }
-function updateCosts(ty) {
+function initBuilding(ty, that) {
+    that.buildTime = timeNow();
     ty.cost = Math.floor(ty.cost * 1.4);
     for (let t of buildingTypes) {
         t.cost = Math.floor(t.cost * 1.1);

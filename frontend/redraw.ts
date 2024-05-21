@@ -39,14 +39,18 @@ function redraw(time:DOMHighResTimeStamp=performance.now()) {
     ctx.strokeStyle = (l == modifLoop?K.COLOUR_Select:K.COLOUR_Loop);
     ctx.stroke();
     if (l.building) {
+      let bPct = (timeNow() - l.building.buildTime)/K.TIME_Build;
+      let cPercent = bPct>1?l.building.chargePercentage():bPct;
       ctx.save();
       ctx.beginPath();
       ctx.arc(x(l.loc), y(l.loc), K.SIZE_Building, 0, 2*Math.PI);
       ctx.lineWidth = 5;
       ctx.stroke();
-      ctx.fillStyle = K.COLOUR_Building;
+      let clr2 = K.COLOUR_Building+Math.floor(bPct*256).toString(16).padStart(2, '0');
+      console.log(clr2);
+      ctx.fillStyle = bPct>1?K.COLOUR_Building:clr2
       ctx.fill();
-      let cPercent = l.building.chargePercentage();
+      
       ctx.strokeStyle = K.COLOUR_Active;
       if (cPercent < 0) {
         cPercent = Math.abs(cPercent);

@@ -81,7 +81,11 @@ function affordabilityUpdated(upgrades) {
     }
     return false;
 }
+function buildingReady(b) {
+    return timeNow() - b.buildTime >= K.TIME_Build;
+}
 let sellTime = -1;
+let buildingReadyUpdate = false;
 function uiEvents() {
     let activeTooltip = generateTooltip(activeItem, activeType);
     let tt = byId("tooltip");
@@ -92,7 +96,14 @@ function uiEvents() {
         tt.classList.remove("invis");
         tt.style.left = `min(calc(100vw - 220px), ${clientPos.x + 10 + "px"})`;
         tt.style.top = clientPos.y + 10 + "px";
-        tt.innerHTML = `
+        let bT;
+        if (activeItem && activeItem.building &&
+            (bT = timeNow() - activeItem.building.buildTime) < K.TIME_Build)
+            tt.innerHTML = ` <p><b class="fsvsml">${activeTooltip.title}</b><br>
+      <p class="desc">Under construction ${toTime(K.TIME_Build - bT)} left (${tf2(bT / K.TIME_Build * 100)}%)</p>
+    </p>`;
+        else
+            tt.innerHTML = `
     <p><b class="fsvsml">${activeTooltip.title}</b><br>
       <p class="desc">${activeTooltip.desc}</p>
     </p>
@@ -128,6 +139,11 @@ function uiEvents() {
                 sellEle.classList.add("disabled");
         }
     }
+    if (modifLoop && modifLoop.building &&
+        buildingReady(modifLoop.building) && buildingReadyUpdate) {
+        UIRefreshRequest = K.UIREFRESH_All;
+        buildingReadyUpdate = false;
+    }
     if (UIRefreshRequest != K.UIREFRESH_None &&
         (UIRefreshRequest != K.UIREFRESH_Cost ||
             modifLoop && modifLoop.building
@@ -160,6 +176,12 @@ function uiEvents() {
         </button>`;
             }
             upgradeMenu.innerHTML += getSellButton();
+            if (!buildingReady(modifLoop.building)) {
+                buildingReadyUpdate = true;
+                upgradeMenu.innerHTML = ` <p><br><br>
+            <p class="desc gry nohover">Node is under construction...</p>
+          </p>`;
+            }
         }
         else if (modifLoop) {
             let title = byId("upgradeTitle");

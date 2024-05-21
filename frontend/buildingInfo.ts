@@ -4,6 +4,7 @@ abstract class Building {
   static name:string = "Generic building.";
   static genDesc:string;
   static cost:number;
+  buildTime:number;
   value:number = 0;
   abstract generateDesc():string;
   abstract computeAttack():void;
@@ -39,7 +40,7 @@ class Slow extends Building {
   position:Point
   constructor(loc:Point) {
     super();
-    updateCosts(Slow);
+    initBuilding(Slow, this);
     this.position = loc;
   }
   static cost = 100;
@@ -150,7 +151,7 @@ class Continuous extends Building {
   position:Point;
   constructor(loc:Point) {
     super();
-    updateCosts(Continuous);
+    initBuilding(Continuous, this);
     this.position = loc;
   }
   static cost = 200;
@@ -204,7 +205,7 @@ class MultiShot extends Building {
   position:Point;
   constructor(loc:Point) {
     super();
-    updateCosts(MultiShot);
+    initBuilding(MultiShot, this);
     this.position = loc;
   }
   power = 30;
@@ -298,7 +299,7 @@ class Destressor extends Building {
   position:Point;
   constructor(loc:Point) {
     super();
-    updateCosts(Destressor);
+    initBuilding(Destressor, this);
     this.position = loc;
   }
   power = K.STRESS_Base*2;
@@ -345,7 +346,7 @@ class FastShooter extends Building {
   position:Point;
   constructor(loc:Point) {
     super();
-    updateCosts(FastShooter);
+    initBuilding(FastShooter, this);
     this.position = loc;
   }
   power = 2;
@@ -410,7 +411,8 @@ class FastShooter extends Building {
   }
 }
 
-function updateCosts(ty:any) {
+function initBuilding(ty:any, that:any) {
+  that.buildTime = timeNow();
   ty.cost = Math.floor(ty.cost*1.4);
   for (let t of buildingTypes) {
     t.cost = Math.floor(t.cost*1.1);

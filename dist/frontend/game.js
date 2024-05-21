@@ -5,7 +5,7 @@ const K = {
     COLOUR_Default: "#444",
     COLOUR_Loop: "#666",
     COLOUR_Looper: "#c00",
-    COLOUR_Building: "#00c",
+    COLOUR_Building: "#0000cc",
     COLOUR_Active: "#0c0",
     COLOUR_Select: "#0cc",
     COLOUR_Inactive: "#555",
@@ -19,6 +19,7 @@ const K = {
     TIME_Failure: 20000,
     TIME_Round: 30000,
     TIME_Refresh: 15,
+    TIME_Build: 10000,
     TIME_SellBuilding: 45000,
     MISC_CostRecovery: 0.75,
     STRESS_Base: 1,
@@ -219,7 +220,7 @@ function gameLoop() {
             l.loopPct -= 1;
     }
     for (let loop of loops) {
-        if (loop.building) {
+        if (loop.building && timeNow() - loop.building.buildTime > K.TIME_Build) {
             loop.building.computeAttack();
         }
     }

@@ -106,6 +106,17 @@ details {
   margin: 0px;
 }
 
+#upgradeMenu_Inner {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+#upgradeMenu_Inner button {
+  flex-shrink: 0;
+  flex-grow: 1;
+}
+
 #upgradeMenu.hidden {
   max-height: 0px;
   opacity: 0;
