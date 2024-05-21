@@ -59,9 +59,11 @@ function timeNow() {
 let pauseStart = -1;
 function togglePause() {
     if (paused) {
+        document.title = "thing";
         mainLoopID = setInterval(gameLoop, K.TIME_Refresh);
     }
     else {
+        document.title = "thing (paused)";
         clearInterval(mainLoopID);
     }
     paused = !paused;
@@ -143,7 +145,7 @@ function calcTotalStress() {
     }
 }
 let lastTime = timeNow();
-let failureStart = -1;
+let failureTime = 0;
 let stressNotification = true;
 let nextRound = K.TIME_Round;
 function gameLoop() {
@@ -167,12 +169,13 @@ function gameLoop() {
             ephemeralDialog("Stress level critical - control active loopers to preserve your system!");
             stressNotification = false;
         }
-        if (failureStart < 0)
-            failureStart = timeNow();
-        if (timeNow() - failureStart > K.TIME_Failure) {
-            return;
+        failureTime += delta;
+        console.log(delta);
+        if (failureTime > K.TIME_Failure) {
+            ephemeralDialog("You lose.");
+            togglePause();
         }
-        overloadTimer.style.width = (timeNow() - failureStart) / K.TIME_Failure * 100 + "%";
+        overloadTimer.style.width = (failureTime) / K.TIME_Failure * 100 + "%";
         stressLevel.style.animation = "blinkingRed 2s infinite";
     }
     else {
@@ -180,7 +183,7 @@ function gameLoop() {
     }
     if (totalStress < maxStress * 0.8) {
         stressLevel.style.backgroundColor = getCSSProp("--system-blue3");
-        failureStart = -1;
+        failureTime = 0;
         overloadTimer.style.width = "0%";
     }
     stressLevel.innerText = (totalStress / maxStress * 100).toPrecision(3) + "%";

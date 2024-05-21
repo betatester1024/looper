@@ -38,7 +38,7 @@ class Slow extends Building {
   position:Point
   constructor(loc:Point) {
     super();
-    Slow.cost *= 1.2;
+    Slow.cost = Math.floor(Slow.cost*1.5);
     this.position = loc;
   }
   static cost = 100;
@@ -149,7 +149,7 @@ class Continuous extends Building {
   position:Point;
   constructor(loc:Point) {
     super();
-    Continuous.cost *= 1.2;
+    Continuous.cost = Math.floor(Continuous.cost*1.5);
     this.position = loc;
   }
   static cost = 200;
@@ -203,7 +203,7 @@ class MultiShot extends Building {
   position:Point;
   constructor(loc:Point) {
     super();
-    MultiShot.cost *= 1.2;
+    MultiShot.cost = Math.floor(MultiShot.cost*1.5);
     this.position = loc;
   }
   power = 30;
@@ -291,13 +291,13 @@ class Destressor extends Building {
   static cost = 175;
   static name = "Destressor";
   static genDesc = 
-    `Reduces stress level of every looper in range.
+    `Reduces stress level of every looper n range.
      Base effect: -<b>${K.STRESS_Base*2}</b> stress/sec
     `
   position:Point;
   constructor(loc:Point) {
     super();
-    Destressor.cost *= 1.2;
+    Destressor.cost = Math.floor(Destressor.cost*1.5);
     this.position = loc;
   }
   power = K.STRESS_Base*2;
