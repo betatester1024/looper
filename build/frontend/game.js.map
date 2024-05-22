@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../frontend/game.ts"],
-  "sourcesContent": ["function onLoad() {\n  console.log(\"hello, there.\");\n}\n\nfunction preLoad() {\n  \n}"],
-  "mappings": ";AAAA,SAAS,SAAS;AAChB,UAAQ,IAAI,eAAe;AAC7B;AAEA,SAAS,UAAU;AAEnB;",
-  "names": []
-}

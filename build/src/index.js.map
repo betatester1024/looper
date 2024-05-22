@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../src/index.ts"],
-  "sourcesContent": ["export let connectionSuccess = true;\n\nimport {initServer} from './server';\nconsole.log(\"Loading...\");\ninitServer();"],
-  "mappings": ";;;;;;;;;;;;;;;;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAEA,oBAAyB;AAFlB,IAAI,oBAAoB;AAG/B,QAAQ,IAAI,YAAY;AAAA,IACxB,0BAAW;",
-  "names": []
-}

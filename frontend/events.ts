@@ -104,6 +104,7 @@ function uiEvents() {
     tt.style.left = `min(calc(100vw - 220px), ${clientPos.x + 10+"px"})`;
     tt.style.top = clientPos.y + 10 +"px";
     let bT;
+    activeItem = activeItem as Loop;
     if (activeItem && activeItem.building && 
         (bT=timeNow() - activeItem.building.buildTime) < K.TIME_Build)
       tt.innerHTML = ` <p><b class="fsvsml">${activeTooltip.title}</b><br>
@@ -121,7 +122,7 @@ function uiEvents() {
   en.innerHTML = Math.floor(energy).toLocaleString()+" energy";
 
   for (let i=0; i<buildingTypes.length; i++) {
-    byId("cost"+i)!.innerText = buildingTypes[i].cost+" energy";
+    byId("cost"+i)!.innerText = tf2(buildingTypes[i].cost)+" energy";
     let b = byId("building"+i) as HTMLDivElement;
     if (buildingTypes[i].cost > energy) {
       b.classList.add("disabled");
@@ -181,7 +182,7 @@ function uiEvents() {
         class="btn fsvsml upgrade ${u.active?"":"disabled"}">
         <b>${u.name}</b>
         <p>${u.active || u.cost > energy?u.desc:u.descDisabled}</p>
-        Cost: <b class="${u.cost > energy?"red2 nohover nooutline":""}">${u.cost}</b> energy
+        Cost: <b class="${u.cost > energy?"red2 nohover nooutline":""}">${tf2(u.cost)}</b> energy
         </button>`;
       }
       upgradeMenu.innerHTML += getSellButton();
@@ -218,6 +219,12 @@ function sellBuilding() {
   if (!modifLoop) return;
   energy += modifLoop.building!.value*K.MISC_CostRecovery;
   modifLoop.building = null;
+  for (let i=0; i<animatingBeams.length; i++) {
+    if (animatingBeams[i].loc == modifLoop.loc) {
+      animatingBeams.splice(i, 1);
+      i--;
+    }
+  }
   sellTime = timeNow() + K.TIME_SellBuilding;
   UIRefreshRequest = K.UIREFRESH_All;
 }
@@ -251,15 +258,40 @@ function nearestLoop(p:Point, acceptRad:number=9e99) {
   return nearestDist<acceptRad?nearestLoop:null;
 }
 
-let activeItem:Loop|null = null;
+function nearestLooper(p:Point, acceptRad:number=9e99) {
+  let nearestDist = 9e99;
+  let nearestLooper = null;
+  for (let l of loopers) {
+    let c = K.SIZE_Loop*Math.cos(2*Math.PI*l.loopPct);
+    let s = K.SIZE_Loop*Math.sin(2*Math.PI*l.loopPct);
+    let x2 = x(l.loc)+c;
+    let y2 = y(l.loc)+s;
+    if (distBtw({x:x2, y:y2}, p) < nearestDist) {
+      nearestDist = distBtw({x:x2, y:y2}, p);
+      nearestLooper = l;
+    }
+  }
+  return nearestDist<acceptRad?nearestLooper:null;
+}
+
+let activeItem:Loop|Looper|null = null;
 let activeType:number = -1;
 
-function generateTooltip(item:Loop, type:number) {
+function generateTooltip(item:Loop|Looper, type:number) {
   switch(type) {
     case K.TYPE_Loop:
+      item = item as Loop;
       if (item.building)
         return {active:true, title:getStaticVars(item.building).name, desc:item.building.generateDesc()};
       else return {active:true, title:"Empty loop", desc:`Active loopers: ${loopersAt(item.loc).length}`};
+    case K.TYPE_Looper:
+      calcTotalStress();
+      item = item as Looper;
+      return {active:true, title:"Looper", desc:
+      `Health: ${tf2(item.health)} (${tf2(item.health/item.totalHealth*100)}%)
+      Energy: ${tf2(item.energy)}
+      Stress: ${tf2(item.stress)} (${tf2(item.stress/totalStress*100)}% contribution)
+      `}
     default:
       return {active:false, title:"", desc:""};
   }
@@ -298,7 +330,12 @@ function setActiveBuilding(id:number) {
 let currPos_canv = {x:0, y:0};
 function activateTooltip() {
   let nearestL = nearestLoop(currPos_canv, K.SIZE_Loop);
-  if (nearestL) {
+  let nearestL2 = nearestLooper(currPos_canv, K.SIZE_Looper);
+  if (nearestL2) {
+    activeItem = nearestL2;
+    activeType = K.TYPE_Looper;
+  }
+  else if (nearestL) {
     activeItem = nearestL;
     activeType = K.TYPE_Loop;
   }
@@ -310,10 +347,11 @@ function onMove(ev:Point) {
   currPos_canv = fromCanvPos(ev.x, ev.y);
   if (holdState == K.HOLD_None) {
     activeType = -1;
+    let nearestL2 = nearestLooper(currPos_canv, K.SIZE_Looper);
     let nearestL = nearestLoop(currPos_canv, K.SIZE_Loop);
-    if (nearestL) canv.style.cursor = "pointer";
+    if (nearestL || paused&&nearestL2) canv.style.cursor = "pointer";
     else canv.style.cursor = "";
-    if (tooltipTimer < 0 && nearestL) {
+    if (tooltipTimer < 0 && nearestL || paused&&nearestL2) {
       tooltipTimer = setTimeout(activateTooltip, K.TIME_Tooltip);
     } else {
       clearTimeout(tooltipTimer);

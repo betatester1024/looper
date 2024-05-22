@@ -5,6 +5,7 @@ abstract class Building {
   static genDesc:string;
   static cost:number;
   buildTime:number;
+  position:Point;
   value:number = 0;
   abstract generateDesc():string;
   abstract computeAttack():void;
@@ -21,7 +22,7 @@ interface Upgrade {
   cost:number
 }
 
-function tf2(n:number) {return n.toFixed(2)};
+function tf2(n:number) {return n.toLocaleString(undefined, {maximumFractionDigits: 2}) };
 function roundCosts(arr:number[]) {
   for (let i=0; i<arr.length; i++) {
     arr[i] = Math.round(arr[i]);
@@ -31,8 +32,26 @@ function roundCosts(arr:number[]) {
 function removeLooper(l:Looper) {
   loopers.splice(loopers.indexOf(l), 1);
   energy += l.energy;
+  l.health = 0;
+  removedLoopers.push(l);
+  l.removalTime = timeNow();
   // only write if higher priority request (do not override UIREFRESH_Alls)
   UIRefreshRequest = Math.max(UIRefreshRequest, K.UIREFRESH_Cost);
+}
+
+function shootLooper(b:Building, l:Looper, damage:number, persistent:boolean=true) {
+  l.health -= damage;
+  if (!persistent) {
+    let foundIdx = animatingBeams.findIndex((i)=>{return i.looper == l;});
+    if (foundIdx >= 0) animatingBeams[foundIdx].angle = 2*Math.PI*l.loopPct;
+    else animatingBeams.push({
+      loc:b.position, looper:l, angle:2*Math.PI*l.loopPct, 
+      aStart:timeNow(), persist:false});
+  }
+  else 
+    animatingBeams.push({
+      loc:b.position, looper:l, angle:2*Math.PI*l.loopPct, 
+      aStart:timeNow(), persist:true});
 }
 
 class Slow extends Building {
@@ -115,7 +134,7 @@ class Slow extends Building {
       {
         let idx = rand(available)
         let target = loopers[idx] as Looper;
-        target.health -= this.power;
+        shootLooper(this, target, this.power);//target.health -= this.power;
         if (target.health <= 0) {
           removeLooper(loopers[idx]);
         }
@@ -146,7 +165,7 @@ class Continuous extends Building {
   static name = "ContinuousShot I"
   static genDesc = 
     `Continuous damage.
-    Base damage: <b>2</b>
+    Base damage: <b>8</b>
     `
   position:Point;
   constructor(loc:Point) {
@@ -154,8 +173,8 @@ class Continuous extends Building {
     initBuilding(Continuous, this);
     this.position = loc;
   }
-  static cost = 200;
-  power = 5;
+  static cost = 400;
+  power = 8;
   upgradeCost = 200;
   lastAttack = timeNow();
   generateDesc() {
@@ -180,8 +199,8 @@ class Continuous extends Building {
     this.lastAttack = time;
     let toRemove = [];
     for (let l of loopersAt(this.position)) {
-      loopers[l].health -= delta*this.power;
-      if (loopers[l].health < 0) {
+      shootLooper(this, loopers[l], delta*this.power, false) //.health -= delta*this.power;
+      if (loopers[l].health <= 0) {
         toRemove.push(loopers[l]);
       }
     }
@@ -269,7 +288,7 @@ class MultiShot extends Building {
         for (let i=0; i<this.attackCt; i++) { 
           let idx = rand(available);
           let target = loopers[idx] as Looper;
-          target.health -= this.power;
+          shootLooper(this, loopers[idx], this.power);
           if (target.health <= 0) {
             toRemove.push(loopers[idx]);
           }
@@ -326,7 +345,54 @@ class Destressor extends Building {
     this.lastCalc = timeNow();
     for (let i of loopersAt(this.position)) {
       loopers[i].stress -= this.power*delta;
+      shootLooper(this, loopers[i], 0, false);
       loopers[i].stress = Math.max(0, loopers[i].stress);
+    }
+  }
+  chargePercentage() {
+    return loopersAt(this.position).length>0?1:0;
+  }
+}
+
+class Energiser extends Building {
+  type = 5;
+  static cost = 200;
+  static name = "Energiser";
+  static genDesc = 
+    `Energises every looper in range.
+     Base effect: <b>5</b> energy/sec
+    `
+  position:Point;
+  constructor(loc:Point) {
+    super();
+    initBuilding(Destressor, this);
+    this.position = loc;
+  }
+  power = 5;
+  lastCalc = timeNow();
+  upgradeCost = 75;
+  getUpgrades() {
+    return [
+      {name:"Energy increase", active:true, 
+       desc:`${tf2(this.power)}/s > ${tf2(this.power*1.2)}/s`, 
+       descDisabled:"",
+       cost:this.upgradeCost},
+    ];
+  }
+  upgrade(_type: number): void {
+    this.power *= 1.2;
+    this.upgradeCost *= 1.7;
+  }
+  generateDesc() {
+    return `Energises every looper entering the loop.
+    Reduces <b>${this.power.toFixed(2)}</b> stress/sec/looper.`;
+  }
+  computeAttack() {
+    let delta = (timeNow() - this.lastCalc)/1000;
+    this.lastCalc = timeNow();
+    for (let i of loopersAt(this.position)) {
+      loopers[i].energy += this.power*delta;
+      shootLooper(this, loopers[i], 0, false);
     }
   }
   chargePercentage() {
@@ -340,7 +406,7 @@ class FastShooter extends Building {
   static name = "FastShot I";
   static genDesc = 
     `Rapid firing but low damage.
-     Base damage: <b>2</b>
+     Base damage: <b>8</b>
      Base cooldown: <b>0.5s</b>
     `
   position:Point;
@@ -349,7 +415,7 @@ class FastShooter extends Building {
     initBuilding(FastShooter, this);
     this.position = loc;
   }
-  power = 2;
+  power = 8;
   lastCalc = timeNow();
   upgradeCosts = [75, 100];
   chargeStart = -1;
@@ -397,7 +463,7 @@ class FastShooter extends Building {
         let toRemove = [];
         let idx = rand(available);
         let target = loopers[idx] as Looper;
-        target.health -= this.power;
+        shootLooper(this, target, this.power);
         if (target.health <= 0) {
           removeLooper(loopers[idx]);
         }
@@ -419,4 +485,4 @@ function initBuilding(ty:any, that:any) {
   }
 }
 
-let buildingTypes = [Slow, Continuous, MultiShot, Destressor, FastShooter];
+let buildingTypes = [Slow, Continuous, MultiShot, Destressor, FastShooter, Energiser];

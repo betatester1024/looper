@@ -33,6 +33,18 @@ function redraw(time:DOMHighResTimeStamp=performance.now()) {
       ctx.restore();
   }
   ctx.save();
+  for (let a of animatingBeams) {
+    ctx.save();
+    ctx.beginPath();
+    let c = K.SIZE_Loop*Math.cos(a.angle);
+    let s = K.SIZE_Loop*Math.sin(a.angle);
+    ctx.strokeStyle = K.COLOUR_Beam;//((timeNow()-a.aStart)/K.TIME_BeamAnim*16).toString(16);
+    ctx.globalAlpha = Math.max(a.persist?1-(timeNow()-a.aStart)/K.TIME_BeamAnim:1, 0);
+    ctx.moveTo(x(a.loc), y(a.loc));
+    ctx.lineTo(x(a.loc)+c, y(a.loc)+s);
+    ctx.stroke();
+    ctx.restore();
+  }
   for (let l of loops) {
     ctx.beginPath();
     ctx.arc(x(l.loc), y(l.loc), K.SIZE_Loop, 0, 2*Math.PI);
@@ -47,7 +59,7 @@ function redraw(time:DOMHighResTimeStamp=performance.now()) {
       ctx.lineWidth = 5;
       ctx.stroke();
       let clr2 = K.COLOUR_Building+Math.floor(bPct*256).toString(16).padStart(2, '0');
-      console.log(clr2);
+      // console.log(clr2);
       ctx.fillStyle = bPct>1?K.COLOUR_Building:clr2
       ctx.fill();
       
@@ -65,17 +77,25 @@ function redraw(time:DOMHighResTimeStamp=performance.now()) {
       ctx.restore();
     }
   }
+  for (let l of removedLoopers) {
+    drawLooper(l);
+  }
   for (let l of loopers) {
+    drawLooper(l);
+  }
+ 
+  function drawLooper(l:Looper) {
     ctx.beginPath();
     let c = K.SIZE_Loop*Math.cos(Math.PI*2*l.loopPct);
     let s = K.SIZE_Loop*Math.sin(Math.PI*2*l.loopPct);
-    ctx.arc(x(l.loc)+c, y(l.loc)+s, K.SIZE_Looper, 0, 2*Math.PI);
-    ctx.fillStyle = K.COLOUR_Looper;
+    ctx.moveTo(x(l.loc)+c, y(l.loc)+s);
+    ctx.arc(x(l.loc)+c, y(l.loc)+s, l.removalTime>0?Math.max(1-(timeNow()-l.removalTime)/K.TIME_LooperDestructAnim, 0)*K.SIZE_Looper:K.SIZE_Looper, 0, 2*Math.PI);
+    ctx.fillStyle = l.removalTime < 0?K.COLOUR_Looper:K.COLOUR_Inactive;
     ctx.strokeStyle = K.COLOUR_Default;
     ctx.fill();
     ctx.beginPath();
     ctx.arc(x(l.loc)+c, y(l.loc)+s, K.SIZE_Looper, 0, 2*Math.PI*l.health/l.totalHealth);
-    ctx.stroke();
+    if (l.removalTime < 0) ctx.stroke();
   }
   ctx.restore();
 }

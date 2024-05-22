@@ -9,18 +9,22 @@ const K = {
     COLOUR_Active: "#0c0",
     COLOUR_Select: "#0cc",
     COLOUR_Inactive: "#555",
+    COLOUR_Beam: "#000",
     SPEED_Base: 0.3,
     SIZE_Loop: 40,
     SIZE_Looper: 10,
-    SIZE_Building: 30,
+    SIZE_Building: 20,
     TYPE_Loop: 0,
     TYPE_Building: 1,
+    TYPE_Looper: 2,
     TIME_Tooltip: 500,
     TIME_Failure: 20000,
     TIME_Round: 30000,
     TIME_Refresh: 15,
-    TIME_Build: 10000,
+    TIME_Build: 2000,
+    TIME_BeamAnim: 500,
     TIME_SellBuilding: 45000,
+    TIME_LooperDestructAnim: 500,
     MISC_CostRecovery: 0.75,
     STRESS_Base: 1,
     PROB_Exit: 0.5,
@@ -49,6 +53,8 @@ function rand(arr) {
 }
 let loops = [];
 let loopers = [];
+let animatingBeams = [];
+let removedLoopers = [];
 let holdState = K.HOLD_None;
 function onLoad() {
     console.log("hello, there.");
@@ -111,7 +117,7 @@ function preLoad() {
 function addRandomLooper() {
     let loop = rand(loops);
     let looperHealth = minLooperHealth + Math.random() * (maxLooperHealth - minLooperHealth);
-    loopers.push({ status: 0, loc: { x: loop.loc.x, y: loop.loc.y }, health: looperHealth, totalHealth: looperHealth, stress: 0,
+    loopers.push({ status: 0, removalTime: -1, loc: { x: loop.loc.x, y: loop.loc.y }, health: looperHealth, totalHealth: looperHealth, stress: 0,
         loopPct: Math.random(), cw: rand([true, false]), speed: K.SPEED_Base,
         energy: 30 });
 }
@@ -196,6 +202,12 @@ function gameLoop() {
         overloadTimer.style.width = "0%";
     }
     stressLevel.innerText = (totalStress / maxStress * 100).toPrecision(3) + "%";
+    for (let i = 0; i < animatingBeams.length; i++) {
+        if (timeNow() - animatingBeams[i].aStart > K.TIME_BeamAnim) {
+            animatingBeams.splice(i, 1);
+            i--;
+        }
+    }
     for (let l of loopers) {
         let dStress = K.STRESS_Base * delta / 1000;
         l.stress += dStress;
@@ -218,6 +230,16 @@ function gameLoop() {
             }
         if (l.loopPct >= 1)
             l.loopPct -= 1;
+    }
+    let toRemove = [];
+    for (let l of removedLoopers) {
+        if (timeNow() - l.removalTime > K.TIME_LooperDestructAnim) {
+            toRemove.push(l);
+            continue;
+        }
+    }
+    for (let l of toRemove) {
+        removedLoopers.splice(removedLoopers.indexOf(l), 1);
     }
     for (let loop of loops) {
         if (loop.building && timeNow() - loop.building.buildTime > K.TIME_Build) {
