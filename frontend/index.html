@@ -19,31 +19,36 @@
     globalOnload(onLoad); preLoad()">
     <div class="main_content">
 
-      
-      <canvas id="canv"></canvas>
-      <div id="uiElements">
-        <div id="topBar">
-          <div class="blu nohover" id="energy"></div>
-          <button class="btn fsvsml" onclick="togglePause()">
-            <span class="material-symbols-outlined" id="playpause">pause</span>
-          </button>
-          <div class="outer nobreak">
-            <div class="inner nobreak" id="overloadTimer"></div>
-            <div class="inner nobreak" id="stressLevel"></div>
+      <div id="gameArea">
+        <canvas id="canv"></canvas>
+        <div id="uiElements">
+          <div id="topBar">
+            <div class="blu nohover" id="energy"></div>
+            <button class="btn fsvsml" onclick="togglePause()">
+              <span class="material-symbols-outlined" id="playpause">pause</span>
+            </button>
+            <div class="outer nobreak">
+              <div class="inner nobreak" id="overloadTimer"></div>
+              <div class="inner nobreak" id="stressLevel"></div>
+            </div>
+            <div class="outer nobreak">
+              <div class="inner nobreak" id="roundTimer"></div>
+            </div>
           </div>
-          <div class="outer nobreak">
-            <div class="inner nobreak" id="roundTimer"></div>
+          <div id="sidebar">
+            <b id="sideHeader">Buildings</b>
+          </div>
+          <div id="upgradeMenu" class="hidden">
+            <div id="upgradeTitle"></div>
+            <div id="upgradeMenu_Inner"></div>
           </div>
         </div>
-        <div id="sidebar">
-          <b id="sideHeader">Buildings</b>
-        </div>
-        <div id="upgradeMenu" class="hidden">
-          <div id="upgradeTitle"></div>
-          <div id="upgradeMenu_Inner"></div>
-        </div>
+        <div id="tooltip"></div>
       </div>
-      <div id="tooltip"></div>
+      <div>
+        You just lost.
+        <button class="btn blu fsvsml" onclick="newGame()">New game?</button>
+      </div>
       <details class="blu">
         <summary>Footer</summary>
         <footer id="ftrOverride"></footer>

@@ -63,11 +63,17 @@ let prevX = 0, prevY = 0;
 let clientPos = { x: 0, y: 0 };
 let tooltipTimer = -1;
 let modifLoop = null;
-let UIRefreshRequest = K.UIREFRESH_None;
+let UIRefreshRequest = K.UIREFRESH_All;
+let sellTime = -1;
+let buildingReadyUpdate = false;
+let activeItem = null;
+let activeType = -1;
+let prevUpgrades = [];
+let activeBuilding = -1;
+let currPos_canv = { x: 0, y: 0 };
 function distBtw(p1, p2) {
     return Math.sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
 }
-let prevUpgrades = [];
 function affordabilityUpdated(upgrades) {
     for (let u of upgrades) {
         if (u.cost > energy)
@@ -84,8 +90,6 @@ function affordabilityUpdated(upgrades) {
 function buildingReady(b) {
     return timeNow() - b.buildTime >= K.TIME_Build;
 }
-let sellTime = -1;
-let buildingReadyUpdate = false;
 function uiEvents() {
     let activeTooltip = generateTooltip(activeItem, activeType);
     let tt = byId("tooltip");
@@ -263,8 +267,6 @@ function nearestLooper(p, acceptRad = 9e99) {
     }
     return nearestDist < acceptRad ? nearestLooper : null;
 }
-let activeItem = null;
-let activeType = -1;
 function generateTooltip(item, type) {
     switch (type) {
         case K.TYPE_Loop:
@@ -295,7 +297,6 @@ function build(type, loop) {
         loop.building.value = type.cost;
     }
 }
-let activeBuilding = -1;
 function setActiveBuilding(id) {
     if (modifLoop && !modifLoop.building) {
         build(buildingTypes[id], modifLoop);
@@ -310,7 +311,6 @@ function setActiveBuilding(id) {
         byId("building" + id).classList.add("active");
     activeBuilding = id;
 }
-let currPos_canv = { x: 0, y: 0 };
 function activateTooltip() {
     let nearestL = nearestLoop(currPos_canv, K.SIZE_Loop);
     let nearestL2 = nearestLooper(currPos_canv, K.SIZE_Looper);

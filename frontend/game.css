@@ -17,6 +17,20 @@ canvas {
   /* pointer-events: none; */
 }
 
+#gameArea {
+  left: 0px;
+  position: relative;
+  height: 100vh;
+  width: 100vw;
+  transition: all 0.2s;
+}
+#gameArea.hide {
+  left: 100%;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
 #overloadTimer {
   background-color: var(--system-orange);
   padding-left: 0px;

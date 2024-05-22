@@ -4,6 +4,7 @@ class Building {
     static name = "Generic building.";
     static genDesc;
     static cost;
+    static defaultCost;
     buildTime;
     position;
     value = 0;
@@ -53,6 +54,7 @@ class Slow extends Building {
         this.position = loc;
     }
     static cost = 100;
+    static defaultCost = 100;
     static genDesc = `Slow-firing building. Fires at one random looper every time.
   Base damage: <b>10</b>
   Charge time: <b>1</b> second
@@ -162,6 +164,7 @@ class Continuous extends Building {
         this.position = loc;
     }
     static cost = 400;
+    static defaultCost = 400;
     power = 8;
     upgradeCost = 200;
     lastAttack = timeNow();
@@ -201,6 +204,7 @@ class Continuous extends Building {
 class MultiShot extends Building {
     type = 2;
     static cost = 150;
+    static defaultCost = 150;
     static name = "MultiShot I";
     static genDesc = `Attacks multiple loopers. Slow charging.
     Base damage: <b>30</b>
@@ -295,6 +299,7 @@ class MultiShot extends Building {
 class Destressor extends Building {
     type = 3;
     static cost = 175;
+    static defaultCost = 175;
     static name = "Destressor";
     static genDesc = `Reduces stress level of every looper in range.
      Base effect: -<b>${K.STRESS_Base * 2}</b> stress/sec
@@ -340,6 +345,7 @@ class Destressor extends Building {
 class Energiser extends Building {
     type = 5;
     static cost = 200;
+    static defaultCost = 200;
     static name = "Energiser";
     static genDesc = `Energises every looper in range.
      Base effect: <b>5</b> energy/sec
@@ -384,6 +390,7 @@ class Energiser extends Building {
 class FastShooter extends Building {
     type = 4;
     static cost = 175;
+    static defaultCost = 175;
     static name = "FastShot I";
     static genDesc = `Rapid firing but low damage.
      Base damage: <b>8</b>
@@ -462,6 +469,11 @@ function initBuilding(ty, that) {
     ty.cost = Math.floor(ty.cost * 1.4);
     for (let t of buildingTypes) {
         t.cost = Math.floor(t.cost * 1.1);
+    }
+}
+function resetCosts() {
+    for (let ty of buildingTypes) {
+        ty.cost = ty.defaultCost;
     }
 }
 let buildingTypes = [Slow, Continuous, MultiShot, Destressor, FastShooter, Energiser];

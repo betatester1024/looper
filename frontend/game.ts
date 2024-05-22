@@ -42,13 +42,7 @@ const K = {
   UIREFRESH_All:2,
 }
 
-let totalStress = 0;
-let looperCt = 2;
-let maxStress = 200;
-let roundCt = 1;
-let energy = 300;
-let minLooperHealth = 10;
-let maxLooperHealth = 30;
+
 
 interface Looper {
   energy:number,
@@ -92,28 +86,41 @@ interface animInfo {
   aStart:number,
   persist:boolean
 }
-let loops:Loop[] = [];
-let loopers:Looper[] = [];
-let animatingBeams:animInfo[] = [];
-let removedLoopers:Looper[] = [];
-let holdState:number = K.HOLD_None;
-
 function onLoad() {
   console.log("hello, there.");
 }
-
-let mainLoopID:any = -1;
 
 function getStaticVars(obj:Object) {
   return Object.getPrototypeOf(obj).constructor;
 }
 
+let loops:Loop[] = [];
+let loopers:Looper[] = [];
+let animatingBeams:animInfo[] = [];
+let removedLoopers:Looper[] = [];
+let holdState:number = K.HOLD_None;
+let totalStress = 0;
+let looperCt = 2;
+let maxStress = 200;
+let roundCt = 1;
+let energy = 300;
+let minLooperHealth = 10;
+let maxLooperHealth = 30;
+let mainLoopID:any = -1;
 let globalTicks = 0;
 let paused = false;
+let lastTime = timeNow();
+let failureTime = 0;
+let stressNotification = true;
+let nextRound = K.TIME_Round;
+let pauseStart = -1;
+let tickCounter_lastTime = Date.now();
+let canv:HTMLCanvasElement;
+let ctx:CanvasRenderingContext2D;
+
 function timeNow() {
   return globalTicks;
 }
-let pauseStart = -1;
 function togglePause() {
   if (paused) {
     document.title = "thing";
@@ -135,8 +142,6 @@ function togglePause() {
   }
   paused = !paused;
 }
-
-let tickCounter_lastTime = Date.now();
 function preLoad() {
   registerMaximisingCanvas("canv", 1, 1, redraw);
   registerEvents();
@@ -161,8 +166,6 @@ function preLoad() {
   mainLoopID = setInterval(gameLoop, K.TIME_Refresh);
   initLooper();
 }
-
-
 function addRandomLooper() {
   let loop = rand(loops);
   let looperHealth = minLooperHealth + Math.random()*(maxLooperHealth-minLooperHealth);
@@ -170,7 +173,6 @@ function addRandomLooper() {
                 loopPct:Math.random(), cw:rand([true, false]), speed:K.SPEED_Base,
                energy:30});
 }
-
 function addRandomLoop() {
   // n^2 :l
   let possibleLocs = [];
@@ -194,29 +196,21 @@ function initLooper() {
   loops.push({loc:{x:0, y:0}, building:null});
   addRandomLooper();
 }
-
 function modPos(v:number, m:number) {
   return ((v%m)+m)%m;
 }
-
 function existsLoop(x:number, y:number) {
   for (let l of loops) {
     if (l.loc.x == x && l.loc.y == y) return true;
   }
   return false;
 }
-
 function calcTotalStress() {
   totalStress =0;
   for (let l of loopers) {
     totalStress += l.stress;
   }
 }
-
-let lastTime = timeNow();
-let failureTime = 0;
-let stressNotification = true;
-let nextRound = K.TIME_Round;
 function gameLoop() {
   let delta = timeNow() - lastTime;
   nextRound -= delta;
@@ -240,7 +234,8 @@ function gameLoop() {
     failureTime += delta;
     if (failureTime > K.TIME_Failure) {
       ephemeralDialog("You lose.");
-      togglePause()
+      togglePause();
+      clearGameArea();
     }
     overloadTimer.style.width = (failureTime)/K.TIME_Failure*100 + "%";
     stressLevel.style.animation = "blinkingRed 2s infinite";
@@ -302,20 +297,62 @@ function gameLoop() {
   }
   if (loopers.length == 0) newRound();
 }
+function clearGameArea() {
+  let gA = byId("gameArea") as HTMLDivElement;
+  gA.classList.add("hide");
+}
+
+function newGame() {
+  let gA = byId("gameArea") as HTMLDivElement;
+  gA.classList.remove("hide");
+  globalTicks = 0;
+  lastTime = timeNow();
+  failureTime = 0;
+  stressNotification = true;
+  nextRound = K.TIME_Round;
+  tickCounter_lastTime = Date.now();
+  loops = [];
+  loopers= [];
+  animatingBeams= [];
+  removedLoopers= [];
+  holdState= K.HOLD_None;
+  totalStress = 0;
+  looperCt = 2;
+  maxStress = 200;
+  roundCt = 1;
+  energy = 300;
+  minLooperHealth = 10;
+  maxLooperHealth = 30;
+  prevX=0;
+  prevY=0;
+  clientPos = {x:0, y:0};
+  tooltipTimer = -1;
+  modifLoop = null;
+  UIRefreshRequest = K.UIREFRESH_All;
+  sellTime = -1;
+  buildingReadyUpdate = false; // must update upgrade menu when building completes?
+  activeItem = null;
+  activeType = -1;
+  prevUpgrades = [];
+  activeBuilding = -1;
+  currPos_canv = {x:0, y:0};
+  initLooper();
+  togglePause();
+  resetCosts();
+}
 
 function newRound() {
   nextRound = K.TIME_Round;
   roundCt++;
   maxLooperHealth += 4;
   maxStress *= 1.05;
-  looperCt = Math.min(30, looperCt+2);
+  looperCt = Math.min(50, looperCt+2);
   for (let i=0; i<looperCt; i++) 
     addRandomLooper();
   if (Math.random() < K.PROB_AddLoop) addRandomLoop();
 }
 
-let canv:HTMLCanvasElement;
-let ctx:CanvasRenderingContext2D;
+
 
 function registerMaximisingCanvas(id:string, widthPc:number, heightPc:number, redrawFcn:()=>void) { // (id:string, widthPc:number, heightPc:number, redrawFcn:()=>any) {
   canv = byId(id) as HTMLCanvasElement;

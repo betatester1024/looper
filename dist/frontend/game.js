@@ -33,13 +33,6 @@ const K = {
     UIREFRESH_Cost: 1,
     UIREFRESH_All: 2,
 };
-let totalStress = 0;
-let looperCt = 2;
-let maxStress = 200;
-let roundCt = 1;
-let energy = 300;
-let minLooperHealth = 10;
-let maxLooperHealth = 30;
 function loopersAt(loc) {
     let out = [];
     for (let i = 0; i < loopers.length; i++) {
@@ -51,24 +44,38 @@ function loopersAt(loc) {
 function rand(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
 }
+function onLoad() {
+    console.log("hello, there.");
+}
+function getStaticVars(obj) {
+    return Object.getPrototypeOf(obj).constructor;
+}
 let loops = [];
 let loopers = [];
 let animatingBeams = [];
 let removedLoopers = [];
 let holdState = K.HOLD_None;
-function onLoad() {
-    console.log("hello, there.");
-}
+let totalStress = 0;
+let looperCt = 2;
+let maxStress = 200;
+let roundCt = 1;
+let energy = 300;
+let minLooperHealth = 10;
+let maxLooperHealth = 30;
 let mainLoopID = -1;
-function getStaticVars(obj) {
-    return Object.getPrototypeOf(obj).constructor;
-}
 let globalTicks = 0;
 let paused = false;
+let lastTime = timeNow();
+let failureTime = 0;
+let stressNotification = true;
+let nextRound = K.TIME_Round;
+let pauseStart = -1;
+let tickCounter_lastTime = Date.now();
+let canv;
+let ctx;
 function timeNow() {
     return globalTicks;
 }
-let pauseStart = -1;
 function togglePause() {
     if (paused) {
         document.title = "thing";
@@ -89,7 +96,6 @@ function togglePause() {
     }
     paused = !paused;
 }
-let tickCounter_lastTime = Date.now();
 function preLoad() {
     registerMaximisingCanvas("canv", 1, 1, redraw);
     registerEvents();
@@ -160,10 +166,6 @@ function calcTotalStress() {
         totalStress += l.stress;
     }
 }
-let lastTime = timeNow();
-let failureTime = 0;
-let stressNotification = true;
-let nextRound = K.TIME_Round;
 function gameLoop() {
     let delta = timeNow() - lastTime;
     nextRound -= delta;
@@ -189,6 +191,7 @@ function gameLoop() {
         if (failureTime > K.TIME_Failure) {
             ephemeralDialog("You lose.");
             togglePause();
+            clearGameArea();
         }
         overloadTimer.style.width = (failureTime) / K.TIME_Failure * 100 + "%";
         stressLevel.style.animation = "blinkingRed 2s infinite";
@@ -249,19 +252,59 @@ function gameLoop() {
     if (loopers.length == 0)
         newRound();
 }
+function clearGameArea() {
+    let gA = byId("gameArea");
+    gA.classList.add("hide");
+}
+function newGame() {
+    let gA = byId("gameArea");
+    gA.classList.remove("hide");
+    globalTicks = 0;
+    lastTime = timeNow();
+    failureTime = 0;
+    stressNotification = true;
+    nextRound = K.TIME_Round;
+    tickCounter_lastTime = Date.now();
+    loops = [];
+    loopers = [];
+    animatingBeams = [];
+    removedLoopers = [];
+    holdState = K.HOLD_None;
+    totalStress = 0;
+    looperCt = 2;
+    maxStress = 200;
+    roundCt = 1;
+    energy = 300;
+    minLooperHealth = 10;
+    maxLooperHealth = 30;
+    prevX = 0;
+    prevY = 0;
+    clientPos = { x: 0, y: 0 };
+    tooltipTimer = -1;
+    modifLoop = null;
+    UIRefreshRequest = K.UIREFRESH_All;
+    sellTime = -1;
+    buildingReadyUpdate = false;
+    activeItem = null;
+    activeType = -1;
+    prevUpgrades = [];
+    activeBuilding = -1;
+    currPos_canv = { x: 0, y: 0 };
+    initLooper();
+    togglePause();
+    resetCosts();
+}
 function newRound() {
     nextRound = K.TIME_Round;
     roundCt++;
     maxLooperHealth += 4;
     maxStress *= 1.05;
-    looperCt = Math.min(30, looperCt + 2);
+    looperCt = Math.min(50, looperCt + 2);
     for (let i = 0; i < looperCt; i++)
         addRandomLooper();
     if (Math.random() < K.PROB_AddLoop)
         addRandomLoop();
 }
-let canv;
-let ctx;
 function registerMaximisingCanvas(id, widthPc, heightPc, redrawFcn) {
     canv = byId(id);
     ctx = canv.getContext("2d");

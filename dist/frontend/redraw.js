@@ -1,5 +1,5 @@
 "use strict";
-const DEBUG = true;
+const DEBUG = false;
 let prevTime = performance.now();
 function redraw(time = performance.now()) {
     let delta = time - prevTime;
@@ -15,26 +15,27 @@ function redraw(time = performance.now()) {
     ctx.clearRect(0, 0, canv.width, canv.height);
     ctx.fillRect(0, 0, canv.width, canv.height);
     ctx.restore();
+    ctx.lineWidth = 3;
     if (DEBUG) {
         ctx.beginPath();
-        ctx.lineWidth = 3;
         ctx.moveTo(-viewportW / 2, -viewportH / 2);
         ctx.lineTo(viewportW / 2, -viewportH / 2);
         ctx.lineTo(viewportW / 2, viewportH / 2);
         ctx.lineTo(-viewportW / 2, viewportH / 2);
         ctx.lineTo(-viewportW / 2, -viewportH / 2);
         ctx.stroke();
-        ctx.save();
-        if (fpsCurr < 25)
-            ctx.fillStyle = getCSSProp('--system-red');
-        else if (fpsCurr < 40)
-            ctx.fillStyle = getCSSProp('--system-yellowtext');
-        else
-            ctx.fillStyle = getCSSProp('--system-green');
-        ctx.fillText(fpsCurr.toFixed(2) + "fps", -viewportW / 2 + 30, -viewportH / 2 + 30);
-        ctx.fillRect(-viewportW / 2 + 20, -viewportH / 2 + 25, 5, 5);
-        ctx.restore();
     }
+    ctx.save();
+    ctx.resetTransform();
+    if (fpsCurr < 25)
+        ctx.fillStyle = getCSSProp('--system-red');
+    else if (fpsCurr < 40)
+        ctx.fillStyle = getCSSProp('--system-yellowtext');
+    else
+        ctx.fillStyle = getCSSProp('--system-green');
+    ctx.fillText(fpsCurr.toFixed(2) + "fps", 50, 120);
+    ctx.fillRect(40, 113.5, 5, 5);
+    ctx.restore();
     ctx.save();
     for (let a of animatingBeams) {
         ctx.save();

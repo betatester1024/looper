@@ -69,13 +69,18 @@ let prevX=0, prevY=0;
 let clientPos = {x:0, y:0};
 let tooltipTimer:any = -1;
 let modifLoop:Loop|null = null;
-let UIRefreshRequest:number = K.UIREFRESH_None;
+let UIRefreshRequest:number = K.UIREFRESH_All;
+let sellTime = -1;
+let buildingReadyUpdate = false; // must update upgrade menu when building completes?
+let activeItem:Loop|Looper|null = null;
+let activeType:number = -1;
+let prevUpgrades:Upgrade[] = [];
+let activeBuilding = -1;
+let currPos_canv = {x:0, y:0};
 
 function distBtw(p1:Point, p2:Point) {
   return Math.sqrt((p1.x-p2.x)*(p1.x-p2.x)+(p1.y-p2.y)*(p1.y-p2.y));
 }
-
-let prevUpgrades:Upgrade[] = [];
 function affordabilityUpdated(upgrades:Upgrade[]) {
   for (let u of upgrades) {
     if (u.cost > energy) u.active = false;
@@ -86,13 +91,9 @@ function affordabilityUpdated(upgrades:Upgrade[]) {
   }
   return false;
 }
-
 function buildingReady(b:Building) {
   return timeNow() - b.buildTime >= K.TIME_Build;
 }
-
-let sellTime = -1;
-let buildingReadyUpdate = false; // must update upgrade menu when building completes?
 function uiEvents() {
   let activeTooltip = generateTooltip(activeItem!, activeType);
   let tt = byId("tooltip") as HTMLDivElement;
@@ -204,7 +205,6 @@ function uiEvents() {
   }
   
 }
-
 function getSellButton() {
   if (!modifLoop) return "";
   if (!modifLoop.building) return "";
@@ -228,7 +228,6 @@ function sellBuilding() {
   sellTime = timeNow() + K.TIME_SellBuilding;
   UIRefreshRequest = K.UIREFRESH_All;
 }
-
 function UIPurchase(n:number) {
   if (!modifLoop || !modifLoop.building)
     ephemeralDialog("Could not find the applicable building.")
@@ -240,12 +239,9 @@ function UIPurchase(n:number) {
   }
   UIRefreshRequest = K.UIREFRESH_All;
 }
-
-
 function canvPos(l:Loop) {
   return {x:x(l.loc), y:y(l.loc)};
 }
-
 function nearestLoop(p:Point, acceptRad:number=9e99) {
   let nearestDist = 9e99;
   let nearestLoop = null;
@@ -257,7 +253,6 @@ function nearestLoop(p:Point, acceptRad:number=9e99) {
   }
   return nearestDist<acceptRad?nearestLoop:null;
 }
-
 function nearestLooper(p:Point, acceptRad:number=9e99) {
   let nearestDist = 9e99;
   let nearestLooper = null;
@@ -273,10 +268,6 @@ function nearestLooper(p:Point, acceptRad:number=9e99) {
   }
   return nearestDist<acceptRad?nearestLooper:null;
 }
-
-let activeItem:Loop|Looper|null = null;
-let activeType:number = -1;
-
 function generateTooltip(item:Loop|Looper, type:number) {
   switch(type) {
     case K.TYPE_Loop:
@@ -296,8 +287,6 @@ function generateTooltip(item:Loop|Looper, type:number) {
       return {active:false, title:"", desc:""};
   }
 }
-
-
 function build(type:any, loop:Loop) {
   
   if (type.cost > energy) {} 
@@ -311,7 +300,6 @@ function build(type:any, loop:Loop) {
     loop.building!.value = type.cost;
   }
 }
-let activeBuilding = -1;
 function setActiveBuilding(id:number) {
   if (modifLoop && !modifLoop.building) {
     build(buildingTypes[id], modifLoop)
@@ -326,8 +314,6 @@ function setActiveBuilding(id:number) {
   if (id>=0) byId("building"+id)!.classList.add("active");
   activeBuilding = id;
 }
-
-let currPos_canv = {x:0, y:0};
 function activateTooltip() {
   let nearestL = nearestLoop(currPos_canv, K.SIZE_Loop);
   let nearestL2 = nearestLooper(currPos_canv, K.SIZE_Looper);
@@ -341,7 +327,6 @@ function activateTooltip() {
   }
   else activeType = -1;
 }
-
 function onMove(ev:Point) {
   clientPos = {x:ev.x, y:ev.y};
   currPos_canv = fromCanvPos(ev.x, ev.y);
@@ -366,7 +351,6 @@ function onMove(ev:Point) {
     redraw();
   }
 }
-
 function onPointerDown(ev:Point) {
   currPos_canv = fromCanvPos(ev.x, ev.y);
   let nL = nearestLoop(currPos_canv, K.SIZE_Loop)
@@ -394,15 +378,12 @@ function onPointerDown(ev:Point) {
   }
   console.log("pointerdown")
 }
-
 function onPointerUp(ev:any) {
   holdState = K.HOLD_None;
   canv.style.cursor = "default";
   console.log("pointerup")
 }
-
 function keyUpdate(ev:KeyboardEvent) {}
-
 function onWheel(ev:WheelEvent) {
   // larger -ve deltaY: 
   // ctx.

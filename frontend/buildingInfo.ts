@@ -4,6 +4,7 @@ abstract class Building {
   static name:string = "Generic building.";
   static genDesc:string;
   static cost:number;
+  static readonly defaultCost:number;
   buildTime:number;
   position:Point;
   value:number = 0;
@@ -67,6 +68,7 @@ class Slow extends Building {
     this.position = loc;
   }
   static cost = 100;
+  static readonly defaultCost = 100;
   static genDesc = 
   `Slow-firing building. Fires at one random looper every time.
   Base damage: <b>10</b>
@@ -178,6 +180,7 @@ class Continuous extends Building {
     this.position = loc;
   }
   static cost = 400;
+  static readonly defaultCost = 400;
   power = 8;
   upgradeCost = 200;
   lastAttack = timeNow();
@@ -218,6 +221,7 @@ class Continuous extends Building {
 class MultiShot extends Building {
   type = 2;
   static cost = 150;
+  static readonly defaultCost = 150;
   static name = "MultiShot I";
   static genDesc = 
     `Attacks multiple loopers. Slow charging.
@@ -314,6 +318,7 @@ class MultiShot extends Building {
 class Destressor extends Building {
   type = 3;
   static cost = 175;
+  static readonly defaultCost = 175;
   static name = "Destressor";
   static genDesc = 
     `Reduces stress level of every looper in range.
@@ -361,6 +366,7 @@ class Destressor extends Building {
 class Energiser extends Building {
   type = 5;
   static cost = 200;
+  static readonly defaultCost = 200;
   static name = "Energiser";
   static genDesc = 
     `Energises every looper in range.
@@ -407,6 +413,7 @@ class Energiser extends Building {
 class FastShooter extends Building {
   type = 4;
   static cost = 175;
+  static readonly defaultCost = 175;
   static name = "FastShot I";
   static genDesc = 
     `Rapid firing but low damage.
@@ -486,6 +493,12 @@ function initBuilding(ty:any, that:any) {
   ty.cost = Math.floor(ty.cost*1.4);
   for (let t of buildingTypes) {
     t.cost = Math.floor(t.cost*1.1);
+  }
+}
+
+function resetCosts() {
+  for (let ty of buildingTypes) {
+    ty.cost = ty.defaultCost;
   }
 }
 
