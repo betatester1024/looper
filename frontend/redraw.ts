@@ -39,7 +39,7 @@ function redraw(time:DOMHighResTimeStamp=performance.now()) {
     let c = K.SIZE_Loop*Math.cos(a.angle);
     let s = K.SIZE_Loop*Math.sin(a.angle);
     ctx.strokeStyle = K.COLOUR_Beam;//((timeNow()-a.aStart)/K.TIME_BeamAnim*16).toString(16);
-    ctx.globalAlpha = Math.max(a.persist?1-(timeNow()-a.aStart)/K.TIME_BeamAnim:1, 0);
+    ctx.globalAlpha = Math.max(1-(timeNow()-a.aStart)/K.TIME_BeamAnim, 0);
     ctx.moveTo(x(a.loc), y(a.loc));
     ctx.lineTo(x(a.loc)+c, y(a.loc)+s);
     ctx.stroke();

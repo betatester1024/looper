@@ -27,8 +27,11 @@ function shootLooper(b, l, damage, persistent = true) {
     l.health -= damage;
     if (!persistent) {
         let foundIdx = animatingBeams.findIndex((i) => { return i.looper == l; });
-        if (foundIdx >= 0)
+        if (foundIdx >= 0) {
             animatingBeams[foundIdx].angle = 2 * Math.PI * l.loopPct;
+            animatingBeams[foundIdx].aStart = timeNow();
+            animatingBeams[foundIdx].loc = b.position;
+        }
         else
             animatingBeams.push({
                 loc: b.position, looper: l, angle: 2 * Math.PI * l.loopPct,
