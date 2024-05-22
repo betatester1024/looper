@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html class="{{mainClass}}">
   <head>
-    <script src='./dist/utils.js'></script>
-    <script src="./dist/game.js"> </script>
-    <script src="./dist/redraw.js"></script>
-    <script src="./dist/transfm.js"></script>
-    <script src="./dist/events.js"></script>
+    <script src='../dist/frontend/utils.js'></script>
+    <script src="../dist/frontend/game.js"> </script>
+    <script src="../dist/frontend/redraw.js"></script>
+    <script src="../dist/frontend/transfm.js"></script>
+    <script src="../dist/frontend/events.js"></script>
+    <script src="../dist/frontend/buildingInfo.js"></script>
     <title>thing</title>
-    <script src="./dist/buildingInfo.js"></script>
+    
     <!--{{{globalTags}}}-->
     <link rel="stylesheet" href="./game.css">
     <style>
@@ -16,7 +17,19 @@
   </head>
   <body onload="
     if (document.URL.at(-1) != '/') location.href+= '/';
-    globalOnload(onLoad); preLoad()">
+    // github pages
+    if (typeof globalOnload == 'undefined') {
+      var scr = document.createElement('script');
+      scr.src = `../dist/frontend/script`;
+      document.head.appendChild(script);
+      scr.onload=()=>{
+        globalOnload(onLoad);
+      }
+    }  
+    else {
+      globalOnload(onLoad);
+    } 
+    preLoad();">
     <div class="main_content">
 
       <div id="gameArea">

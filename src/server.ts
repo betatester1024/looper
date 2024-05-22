@@ -174,8 +174,8 @@ export async function initServer() {
   })
 
 
-  app.get('/dist/*.js*', (req:any, res:any) => {
-    res.sendFile(jsDir+req.url.replace(/\/dist\//, ""));
+  app.get('/dist/frontend/*.js*', (req:any, res:any) => {
+    res.sendFile(jsDir+req.url.replace(/\/dist\/frontend\//, ""));
   })
 
 
