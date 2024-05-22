@@ -48,7 +48,7 @@ function redraw(time:DOMHighResTimeStamp=performance.now()) {
   }
   for (let l of loops) {
     ctx.beginPath();
-    ctx.arc(x(l.loc), y(l.loc), K.SIZE_Loop, 0, 2*Math.PI);
+    ctx.arc(x(l.loc), y(l.loc), K.SIZE_Loop*Math.min(1, (timeNow()-l.addTime)/K.TIME_AddLoop), 0, 2*Math.PI);
     ctx.strokeStyle = (l == modifLoop?K.COLOUR_Select:K.COLOUR_Loop);
     ctx.stroke();
     if (l.building) {
@@ -65,6 +65,10 @@ function redraw(time:DOMHighResTimeStamp=performance.now()) {
       ctx.fill();
       
       ctx.strokeStyle = K.COLOUR_Active;
+      if (bPct < 1) {
+        console.log("buildingPct");
+        ctx.strokeStyle = K.COLOUR_Pending;
+      }
       if (cPercent < 0) {
         cPercent = Math.abs(cPercent);
         ctx.strokeStyle = K.COLOUR_Inactive;

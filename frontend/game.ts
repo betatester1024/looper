@@ -8,6 +8,7 @@ const K = {
   COLOUR_Building:"#0000cc",
   COLOUR_Active:"#0c0",
   COLOUR_Select:"#0cc",
+  COLOUR_Pending:"#c00",
   COLOUR_Inactive:"#555",
   COLOUR_Beam:"#000",
 
@@ -26,6 +27,7 @@ const K = {
   TIME_Round:30000,
   TIME_Refresh:15,
   TIME_Build:2000,
+  TIME_AddLoop:200,
   TIME_BeamAnim:500,
   TIME_SellBuilding:45000,
   TIME_LooperDestructAnim:500,
@@ -76,7 +78,8 @@ interface AttackInfo {
 
 
 interface Loop {
-  loc:Point
+  loc:Point,
+  addTime:number
   building:Building|null
 }
 interface animInfo {
@@ -190,10 +193,10 @@ function addRandomLoop() {
       if (poss) possibleLocs.push({x:l.loc.x+dx[i], y:l.loc.y+dy[i]});
     }
   }
-  loops.push({loc:rand(possibleLocs), building:null});
+  loops.push({loc:rand(possibleLocs), addTime: timeNow(), building:null});
 }
 function initLooper() {
-  loops.push({loc:{x:0, y:0}, building:null});
+  loops.push({loc:{x:0, y:0}, addTime:timeNow(), building:null});
   addRandomLooper();
 }
 function modPos(v:number, m:number) {

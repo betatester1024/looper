@@ -110,6 +110,9 @@ async function initServer() {
         res.setHeader("cache-control", "public, max-age=31536000, immutable");
         res.sendFile(consts_1.frontendDir + req.url);
     });
+    app.get('/dist/*.js*', (req, res) => {
+        res.sendFile(consts_1.jsDir + req.url.replace(/\/dist\//, ""));
+    });
     app.get('/*.js*', (req, res) => {
         res.sendFile(consts_1.jsDir + req.url);
     });
