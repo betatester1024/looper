@@ -43,7 +43,7 @@ async function globalOnload(cbk, networkLess = false, link = "/server") {
             console.log("Font loaded!");
         };
         script = document.createElement('script');
-        script.src = "/nodemodules/dialog-polyfill/dist/dialog-polyfill.js";
+        script.src = "https://cdn.jsdelivr.net/npm/dialog-polyfill@0.5.6/dist/dialog-polyfill.js";
         document.head.appendChild(script);
     }
     HASNETWORK = !networkLess;

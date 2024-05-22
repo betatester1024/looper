@@ -48,7 +48,8 @@ async function globalOnload(cbk:()=>any, networkLess:boolean=false, link:string=
       console.log("Font loaded!")
     }
     script = document.createElement('script');
-    script.src = "/nodemodules/dialog-polyfill/dist/dialog-polyfill.js";
+    //script.src = "/nodemodules/dialog-polyfill/dist/dialog-polyfill.js";
+    script.src = "https://cdn.jsdelivr.net/npm/dialog-polyfill@0.5.6/dist/dialog-polyfill.js"
     document.head.appendChild(script);
   }
   // else byId("overlayL").remove();
