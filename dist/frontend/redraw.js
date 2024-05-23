@@ -62,12 +62,17 @@ function redraw(time = performance.now()) {
             ctx.arc(x(l.loc), y(l.loc), K.SIZE_Building, 0, 2 * Math.PI);
             ctx.lineWidth = 5;
             ctx.stroke();
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
             let clr2 = K.COLOUR_Building + Math.floor(bPct * 256).toString(16).padStart(2, '0');
             ctx.fillStyle = bPct > 1 ? K.COLOUR_Building : clr2;
             ctx.fill();
+            ctx.font = "16px Noto Sans Display";
+            ctx.fillStyle = "#fff";
+            ctx.fillText(getStaticVars(l.building).char, x(l.loc), y(l.loc));
+            ctx.beginPath();
             ctx.strokeStyle = K.COLOUR_Active;
             if (bPct < 1) {
-                console.log("buildingPct");
                 ctx.strokeStyle = K.COLOUR_Pending;
             }
             if (cPercent < 0) {

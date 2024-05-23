@@ -12,6 +12,7 @@ const K = {
     COLOUR_Inactive: "#555",
     COLOUR_Beam: "#000",
     SPEED_Base: 0.3,
+    SPEED_Minimum: 0.05,
     SIZE_Loop: 40,
     SIZE_Looper: 10,
     SIZE_Building: 20,
@@ -29,6 +30,7 @@ const K = {
     TIME_LooperDestructAnim: 500,
     MISC_CostRecovery: 0.75,
     STRESS_Base: 1,
+    STRESS_Minimum: 0.01,
     PROB_Exit: 0.5,
     PROB_AddLoop: 0.8,
     UIREFRESH_None: 0,
@@ -106,7 +108,7 @@ function preLoad() {
     for (let i = 0; i < buildingTypes.length; i++) {
         let ty = buildingTypes[i];
         sidebar.innerHTML += `<div class="building" id="building${i}" onclick="setActiveBuilding(${i})">
-    B
+    ${ty.char}
     <div class="onhover">
     <b id="title${i}">${ty.name}</b><br>
     <b id="cost${i}">${ty.cost} energy</b><br>
@@ -127,7 +129,7 @@ function addRandomLooper() {
     let looperHealth = minLooperHealth + Math.random() * (maxLooperHealth - minLooperHealth);
     loopers.push({ status: 0, removalTime: -1, loc: { x: loop.loc.x, y: loop.loc.y }, health: looperHealth, totalHealth: looperHealth, stress: 0,
         loopPct: Math.random(), cw: rand([true, false]), speed: K.SPEED_Base,
-        energy: 30 });
+        energy: 30, stressFactor: 1 });
 }
 function addRandomLoop() {
     let possibleLocs = [];
@@ -215,7 +217,7 @@ function gameLoop() {
     }
     for (let l of loopers) {
         let dStress = K.STRESS_Base * delta / 1000;
-        l.stress += dStress;
+        l.stress += dStress * l.stressFactor;
         let pctBefore = l.loopPct;
         l.loopPct = modPos(l.loopPct + (l.cw ? 1 : -1) * delta / 1000 * l.speed, 1);
         const dx = [1, 0, -1, 0];

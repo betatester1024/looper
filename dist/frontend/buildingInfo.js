@@ -1,6 +1,7 @@
 "use strict";
 class Building {
     type = -1;
+    static char = "B";
     static name = "Generic building.";
     static genDesc;
     static cost;
@@ -8,6 +9,9 @@ class Building {
     buildTime;
     position;
     value = 0;
+}
+function samePt(p1, p2) {
+    return p1.x == p2.x && p1.y == p2.y;
 }
 function tf2(n) { return n.toLocaleString(undefined, { maximumFractionDigits: 2 }); }
 ;
@@ -46,7 +50,7 @@ function shootLooper(b, l, damage, persistent = true) {
         });
 }
 class Slow extends Building {
-    type = 0;
+    static char = "SL";
     position;
     constructor(loc) {
         super();
@@ -152,8 +156,8 @@ class Slow extends Building {
     }
 }
 class Continuous extends Building {
-    type = 1;
-    static name = "ContinuousShot I";
+    static name = "ContinuousShot II";
+    static char = "CS2";
     static genDesc = `Continuous damage.
     Base damage: <b>8</b>
     `;
@@ -161,6 +165,7 @@ class Continuous extends Building {
     constructor(loc) {
         super();
         initBuilding(Continuous, this);
+        this.lastAttack = timeNow();
         this.position = loc;
     }
     static cost = 400;
@@ -201,9 +206,64 @@ class Continuous extends Building {
     }
     chargePercentage() { return loopersAt(this.position).length > 0 ? 1 : 0; }
 }
+class WorseContinuous extends Building {
+    static name = "ContinuousShot I";
+    static char = "CS1";
+    static genDesc = `Continuous damage, but to only one looper at a time.
+    Base damage: <b>6</b>
+    `;
+    position;
+    constructor(loc) {
+        super();
+        initBuilding(WorseContinuous, this);
+        this.lastAttack = timeNow();
+        this.position = loc;
+    }
+    static cost = 300;
+    static defaultCost = 300;
+    power = 6;
+    upgradeCost = 150;
+    lastAttack = timeNow();
+    activeLooper = null;
+    generateDesc() {
+        return `Deals continuous damage to one looper at a time.
+    <b>${this.power}</b> damage/second.`;
+    }
+    getUpgrades() {
+        return [
+            { name: "Damage", active: true,
+                desc: `${tf2(this.power)} > ${tf2(this.power * 1.2)}`,
+                descDisabled: "",
+                cost: this.upgradeCost }
+        ];
+    }
+    upgrade(_type) {
+        this.power *= 1.2;
+        this.upgradeCost = Math.round(this.upgradeCost * 1.3);
+    }
+    computeAttack() {
+        let time = timeNow();
+        let delta = (time - this.lastAttack) / 1000;
+        this.lastAttack = time;
+        if (loopersAt(this.position).length == 0)
+            return;
+        if (this.activeLooper == null || !samePt(this.activeLooper.loc, this.position)) {
+            this.activeLooper = loopers[rand(loopersAt(this.position))];
+        }
+        let target = this.activeLooper;
+        if (target) {
+            shootLooper(this, target, delta * this.power, false);
+            if (target.health <= 0) {
+                removeLooper(target);
+                this.activeLooper = null;
+            }
+        }
+    }
+    chargePercentage() { return loopersAt(this.position).length > 0 ? 1 : 0; }
+}
 class MultiShot extends Building {
-    type = 2;
     static cost = 150;
+    static char = "MS1";
     static defaultCost = 150;
     static name = "MultiShot I";
     static genDesc = `Attacks multiple loopers. Slow charging.
@@ -297,7 +357,7 @@ class MultiShot extends Building {
     }
 }
 class Destressor extends Building {
-    type = 3;
+    static char = "DS";
     static cost = 175;
     static defaultCost = 175;
     static name = "Destressor";
@@ -308,6 +368,7 @@ class Destressor extends Building {
     constructor(loc) {
         super();
         initBuilding(Destressor, this);
+        this.lastCalc = timeNow();
         this.position = loc;
     }
     power = K.STRESS_Base * 2;
@@ -343,8 +404,8 @@ class Destressor extends Building {
     }
 }
 class Energiser extends Building {
-    type = 5;
     static cost = 200;
+    static char = "E+";
     static defaultCost = 200;
     static name = "Energiser";
     static genDesc = `Energises every looper in range.
@@ -355,6 +416,7 @@ class Energiser extends Building {
         super();
         initBuilding(Destressor, this);
         this.position = loc;
+        this.lastCalc = timeNow();
     }
     power = 5;
     lastCalc = timeNow();
@@ -388,9 +450,9 @@ class Energiser extends Building {
     }
 }
 class FastShooter extends Building {
-    type = 4;
     static cost = 175;
     static defaultCost = 175;
+    static char = "FS1";
     static name = "FastShot I";
     static genDesc = `Rapid firing but low damage.
      Base damage: <b>8</b>
@@ -403,7 +465,6 @@ class FastShooter extends Building {
         this.position = loc;
     }
     power = 8;
-    lastCalc = timeNow();
     upgradeCosts = [75, 100];
     chargeStart = -1;
     chargeTime = 500;
@@ -464,6 +525,203 @@ class FastShooter extends Building {
         return (time - this.chargeStart) / this.chargeTime;
     }
 }
+class Decelerator extends Building {
+    static cost = 175;
+    static defaultCost = 175;
+    static char = "DC1";
+    static name = "Decelerator I";
+    static genDesc = `Decelerates loopers.
+     Base deceleration: <b>-7.2deg/sec<sup>2</sup></b>
+     *Capped at <b>${K.SPEED_Minimum * 360}deg/sec</b>
+    `;
+    position;
+    constructor(loc) {
+        super();
+        initBuilding(Decelerator, this);
+        this.position = loc;
+        this.lastCalc = timeNow();
+    }
+    power = 0.02;
+    lastCalc = timeNow();
+    upgradeCosts = [75, 100];
+    chargeStart = -1;
+    chargeTime = 500;
+    getUpgrades() {
+        return [
+            { name: "Deceleration", active: this.power <= 0.05,
+                desc: `${tf2(this.power * 360)}deg/sec<sup>2</sup> > ${tf2((this.power + 0.01) * 360)}deg/sec<sup>2</sup>`,
+                descDisabled: "Capped: 21.6deg/sec<sup>2</sup>",
+                cost: this.upgradeCosts[0] },
+        ];
+    }
+    upgrade(type) {
+        switch (type) {
+            case 0:
+                this.power += 0.01;
+                this.upgradeCosts[0] *= 1.5;
+                break;
+        }
+        roundCosts(this.upgradeCosts);
+    }
+    generateDesc() {
+        return `Decelerates all loopers by <b>${tf2(this.power * 360)}deg/sec<sup>2</sup></b>.
+    *Capped at <b>${K.SPEED_Minimum * 360}deg/sec</b>`;
+    }
+    computeAttack() {
+        let delta = (timeNow() - this.lastCalc) / 1000;
+        this.lastCalc = timeNow();
+        let available = loopersAt(this.position);
+        for (let i = 0; i < available.length; i++) {
+            let target = loopers[i];
+            target.speed -= this.power * delta;
+            shootLooper(this, target, 0, false);
+            target.speed = Math.max(K.SPEED_Minimum, target.speed);
+        }
+    }
+    chargePercentage() {
+        return loopersAt(this.position).length == 0 ? 0 : 1;
+    }
+}
+class BetterDecelerator extends Building {
+    static cost = 250;
+    static defaultCost = 250;
+    static char = "DC2";
+    static name = "Decelerator II";
+    static genDesc = `Decelerates loopers more effectively and reduces their stress increase factor.
+     Base deceleration: <b>-10.8deg/sec<sup>2</sup></b>
+     *Capped at <b>${K.SPEED_Minimum * 360}deg/sec</b>
+     Base stress reduction <b>1%/sec</b>
+     *Capped at <b>${K.STRESS_Minimum * 100}%</b>
+    `;
+    position;
+    constructor(loc) {
+        super();
+        initBuilding(BetterDecelerator, this);
+        this.position = loc;
+        this.lastCalc = timeNow();
+    }
+    power = 0.02;
+    stressR = 0.01;
+    lastCalc = timeNow();
+    upgradeCosts = [75, 100];
+    chargeStart = -1;
+    chargeTime = 500;
+    getUpgrades() {
+        return [
+            { name: "Deceleration rate", active: this.power <= 0.1,
+                desc: `${tf2(this.power * 360)}deg/sec<sup>2</sup> > ${tf2((this.power + 0.02) * 360)}deg/sec<sup>2</sup>`,
+                descDisabled: "Capped: 21.6deg/sec<sup>2</sup>",
+                cost: this.upgradeCosts[0] },
+            { name: "Stress reduction rate", active: this.stressR <= 0.05,
+                desc: `${tf2(this.stressR * 100)}%/sec > ${tf2(this.stressR * 100 + 1)}%/sec`,
+                descDisabled: "",
+                cost: this.upgradeCosts[0] },
+        ];
+    }
+    upgrade(type) {
+        switch (type) {
+            case 0:
+                this.power += 0.02;
+                this.upgradeCosts[0] *= 1.5;
+                break;
+            case 1:
+                this.stressR += 0.01;
+                this.upgradeCosts[1] *= 1.5;
+                break;
+        }
+        roundCosts(this.upgradeCosts);
+    }
+    generateDesc() {
+        return `Decelerates all loopers by <b>${tf2(this.power * 360)}deg/sec<sup>2</sup></b>.
+    *Capped at <b>${K.SPEED_Minimum * 360}deg/sec</b>
+    Stress accumulation rate reduces by <b>${tf2(this.stressR * 100)}%</b> every second.
+    *Capped at <b>${K.STRESS_Minimum * 100}%</b>
+    `;
+    }
+    computeAttack() {
+        let delta = (timeNow() - this.lastCalc) / 1000;
+        this.lastCalc = timeNow();
+        let available = loopersAt(this.position);
+        for (let i = 0; i < available.length; i++) {
+            let target = loopers[i];
+            target.speed -= this.power * delta;
+            target.stressFactor = Math.max(K.STRESS_Minimum, target.stressFactor - this.stressR * delta);
+            shootLooper(this, target, 0, false);
+            target.speed = Math.max(K.SPEED_Minimum, target.speed);
+        }
+    }
+    chargePercentage() {
+        return loopersAt(this.position).length == 0 ? 0 : 1;
+    }
+}
+class UltraFastShooter extends Building {
+    static cost = 200;
+    static defaultCost = 200;
+    static char = "FS2";
+    static name = "FastShot II";
+    static genDesc = `More rapid firing but even lower damage.
+     Base damage: <b>4</b>
+     Base cooldown: <b>0.2s</b>
+    `;
+    position;
+    constructor(loc) {
+        super();
+        initBuilding(UltraFastShooter, this);
+        this.position = loc;
+    }
+    power = 4;
+    upgradeCosts = [75, 100];
+    chargeStart = -1;
+    chargeTime = 200;
+    getUpgrades() {
+        return [
+            { name: "Damage", active: true,
+                desc: `${tf2(this.power)} > ${tf2(this.power * 1.2)}`,
+                descDisabled: "",
+                cost: this.upgradeCosts[0] },
+        ];
+    }
+    upgrade(type) {
+        switch (type) {
+            case 0:
+                this.power *= 1.2;
+                this.upgradeCosts[0] *= 1.5;
+                break;
+        }
+        roundCosts(this.upgradeCosts);
+    }
+    generateDesc() {
+        return `Fires at one random looper every <b>${tf2(this.chargeTime / 1000)}</b>s.
+    Damage: <b>${this.power}</b>`;
+    }
+    computeAttack() {
+        if (this.chargeStart < 0) {
+            if (loopersAt(this.position).length > 0)
+                this.chargeStart = timeNow();
+            return;
+        }
+        let time = timeNow();
+        if (time - this.chargeStart > this.chargeTime) {
+            this.chargeStart = -1;
+            let available = loopersAt(this.position);
+            if (available.length > 0) {
+                let toRemove = [];
+                let idx = rand(available);
+                let target = loopers[idx];
+                shootLooper(this, target, this.power);
+                if (target.health <= 0) {
+                    removeLooper(loopers[idx]);
+                }
+            }
+        }
+    }
+    chargePercentage() {
+        let time = timeNow();
+        if (this.chargeStart < 0)
+            return 0;
+        return (time - this.chargeStart) / this.chargeTime;
+    }
+}
 function initBuilding(ty, that) {
     that.buildTime = timeNow();
     ty.cost = Math.floor(ty.cost * 1.4);
@@ -476,5 +734,7 @@ function resetCosts() {
         ty.cost = ty.defaultCost;
     }
 }
-let buildingTypes = [Slow, Continuous, MultiShot, Destressor, FastShooter, Energiser];
+let buildingTypes = [Slow, WorseContinuous, Continuous, MultiShot, Destressor,
+    FastShooter, UltraFastShooter, Energiser, Decelerator,
+    BetterDecelerator];
 //# sourceMappingURL=buildingInfo.js.map
