@@ -30,8 +30,14 @@ function redraw(time:DOMHighResTimeStamp=performance.now()) {
     if (fpsCurr < 25) ctx.fillStyle = getCSSProp('--system-red');
     else if (fpsCurr < 40) ctx.fillStyle = getCSSProp('--system-yellowtext');
     else ctx.fillStyle = getCSSProp('--system-green');
+    ctx.font = "16px Noto Sans Display";
     ctx.fillText(fpsCurr.toFixed(2)+"fps", 50, 120)
     ctx.fillRect(40, 113.5, 5, 5);
+    if (paused) {
+      ctx.font = "30px Noto Sans Display";
+      ctx.fillStyle = getCSSProp("--system-blue");
+      ctx.fillText("Game paused.", 40, 150);
+    }
   ctx.restore();
   ctx.save();
   for (let a of animatingBeams) {
