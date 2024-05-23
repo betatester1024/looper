@@ -94,6 +94,25 @@ function affordabilityUpdated(upgrades:Upgrade[]) {
 function buildingReady(b:Building) {
   return timeNow() - b.buildTime >= K.TIME_Build;
 }
+function reposition(n:number) {
+  //@ts-ignore
+  for (let e of document.getElementsByClassName('onhover')) {
+    e.classList.remove("open");
+  }
+  if (n<0) return;
+  let ele = byId("hover"+n) as HTMLDivElement;
+  ele.classList.add("open");
+  let b = byId("building"+n) as HTMLDivElement;
+  let gcp = getComputedStyle(ele);
+  let delta = Number(gcp.height.replace("px", "")) + b.getBoundingClientRect().top - window.innerHeight;
+  console.log(delta);
+  if (delta > 0) ele.style.top = b.getBoundingClientRect().top  
+    - 30
+    - delta + "px";
+  else ele.style.top = b.getBoundingClientRect().top  
+     + "px";
+}
+
 function uiEvents() {
   let activeTooltip = generateTooltip(activeItem!, activeType);
   let tt = byId("tooltip") as HTMLDivElement;

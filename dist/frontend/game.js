@@ -107,12 +107,14 @@ function preLoad() {
     let sidebar = byId("sidebar");
     for (let i = 0; i < buildingTypes.length; i++) {
         let ty = buildingTypes[i];
-        sidebar.innerHTML += `<div class="building" id="building${i}" onclick="setActiveBuilding(${i})">
+        sidebar.innerHTML += `<div class="building" id="building${i}" onmouseout="reposition(-1)" onmouseover="reposition(${i})" onclick="setActiveBuilding(${i})">
     ${ty.char}
-    <div class="onhover">
+    </div>`;
+        let tooltipBar = byId("tooltipBar");
+        tooltipBar.innerHTML += `<div class="onhover" id="hover${i}">
     <b id="title${i}">${ty.name}</b><br>
     <b id="cost${i}">${ty.cost} energy</b><br>
-    <p class="preserveLines">${ty.genDesc}</p></div></div>`;
+    <p class="preserveLines">${ty.genDesc}</p></div>`;
     }
     setInterval(redraw, K.TIME_Refresh);
     setInterval(() => {
