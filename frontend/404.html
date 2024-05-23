@@ -1,3 +1,15 @@
-your damn page weren't found
-
-<a href="/">return to home?</a>
+<body style="font-family:monospace">
+  
+  this file could not be found.
+  <script>
+    let time = Date.now();
+    let exit = 5000;
+    setInterval(()=>{document.getElementById("timer").innerText = Math.min(100, (Date.now() - time)/exit*100).toFixed(2)+"%"}, 35);
+    setTimeout(()=>{location.href="/"}, exit);
+  </script>
+  <a style="color:red; font-size: 60px;" href="/">You shall return home.</a>
+  <p style="font-size: 30px; color:#0a84ff">
+    Collecting information and restarting the page... 
+    <b id="timer"></b>
+  </p>
+</body>
