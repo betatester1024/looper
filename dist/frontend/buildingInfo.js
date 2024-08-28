@@ -571,7 +571,7 @@ class Decelerator extends Building {
         let delta = (timeNow() - this.lastCalc) / 1000;
         this.lastCalc = timeNow();
         let available = loopersAt(this.position);
-        for (let i = 0; i < available.length; i++) {
+        for (let i of available) {
             let target = loopers[i];
             target.speed -= this.power * delta;
             shootLooper(this, target, 0, false);

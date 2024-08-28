@@ -65,7 +65,7 @@ details {
   width: calc(100% - 30px);
   margin: 5px auto;
   left: 5px;
-  background-color: var(--system-bg) !important;
+  background-color: var(--system-grey3) !important;
 }
 
 .onhover {
@@ -116,7 +116,7 @@ details {
   pointer-events: auto;
   position: absolute;
   margin: 0px auto;
-  bottom: 50px;
+  bottom: 0px;
   left: 0;
   right: 0;
   max-height: 300px;
@@ -200,6 +200,11 @@ div#topBar {
   padding-bottom: 10px;
   background-color: var(--system-grey3);
   overflow-y: auto;
+}
+
+#sidebar:active, #sidebar:focus
+{
+  outline: none;
 }
 
 .outer::before {
