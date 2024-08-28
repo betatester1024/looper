@@ -4,13 +4,12 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "build": "echo 'hello'; bash build.sh",
-    "start": "node dist/src/index.js"
+    "build": "tsc",
+    "start": "npm run build; node dist/src/index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "argon2": "^0.40.1",
     "body-parser": "^1.20.2",
     "co-body": "^6.1.0",
     "cookie-parser": "^1.4.6",
