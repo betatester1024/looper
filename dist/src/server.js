@@ -259,7 +259,7 @@ const validPages = ["/commands", '/contact', '/EEdit', '/todo', '/status', '/log
     "/timer", "/newpaste", "/pastesearch", '/clickit', '/capsdle', '/sweepthatmine',
     "/stopwatch", "/testbed", '/credits', '/atomicmoose', '/issuetracker', '/graphIt',
     '/betterselect', '/redirect', '/betterselect.js', "/minimalLogin", "/minimalSignup",
-    "/8192", "/imgedit", "/leaderboard", "/eval", "/smallsubway"];
+    "/8192", "/imgedit", "/leaderboard", "/eval", "/smallsubway", "/spinnn"];
 const ignoreLog = ["getEE", "userRequest", 'getLogs', 'loadLogs', 'visits',
     'roomRequest', 'sendMsg', 'clickIt', 'leaderboard',
     'findPaste', 'startupData'];

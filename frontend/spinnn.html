@@ -1,0 +1,158 @@
+<html><body id="body">
+    <script>
+    function replaceSubstring(text, startIndex, endIndex, newSubstring)
+    {
+    return text.substring(0, startIndex) + newSubstring + text.substring(endIndex, text.length);
+    }
+    function makeCypherEvalString(text)
+    {
+    var index;
+    while ((index = text.indexOf(".")) != -1 && index < text.indexOf("("))
+    {
+    text = replaceSubstring(text, index, index + 1, "_");
+    }
+    return text;
+    }
+    function addTag(tagId, tagType, tagParent)
+    {
+    var cypherTag = document.createElement(tagType)
+    document.getElementById(tagParent).appendChild(cypherTag)
+    cypherTag.setAttribute("id", tagId)
+    if (tagType == "canvas")
+    {
+    canvasContexts[tagId] = cypherTag.getContext("2d");
+    }
+    }
+    function getTagAttribute(tagId, tagAttributeName)
+    {
+    if (tagAttributeName == "value")
+    {
+    return document.getElementById(tagId).value;
+    }
+    if (tagAttributeName == "offsetTop")
+    {
+    return document.getElementById(tagId).offsetTop;
+    }
+    if (tagAttributeName == "offsetLeft")
+    {
+    return document.getElementById(tagId).offsetLeft;
+    }
+    return document.getElementById(tagId).getAttribute(tagAttributeName);
+    }
+    function setTagAttribute(tagId, tagAttributeName, tagAttributeValue)
+    {
+    if (tagAttributeName == "value")
+    {
+    document.getElementById(tagId).value = tagAttributeValue;
+    } else {
+    document.getElementById(tagId).setAttribute(tagAttributeName, tagAttributeValue);
+    }
+    }
+    function getTagChildren(tagId)
+    {
+    var tagChildren = document.getElementById(tagId).childNodes;
+    var cypherOutput = [];
+    var cypherIndex = 0;
+    while (cypherIndex < tagChildren.length)
+    {
+    cypherOutput[cypherIndex] = tagChildren[cypherIndex].id;
+    cypherIndex += 1;
+    }
+    return cypherOutput;
+    }
+    function getArrayKeys(inputArray)
+    {
+    var outputKeys = [];
+    for (key in inputArray)
+    {
+    outputKeys[outputKeys.length] = key;
+    }
+    return outputKeys;
+    }
+    function objectIsInClass(inputObject, inputClass)
+    {
+    var objectClass = inputObject[0];
+    var tempClass = objectClass;
+    while (tempClass != inputClass)
+    {
+    tempClass = classParents[tempClass];
+    if (tempClass == undefined)
+    {
+    return false;
+    }
+    }
+    return true;
+    }
+    function getPrivateVariable(inputObject, inputVariableName)
+    {
+    var objectClass = inputObject[0];
+    return eval("get_" + objectClass + "_" + inputVariableName + "(inputObject)");
+    }
+    function drawCanvasPolygon(canvasName, coordinateArray)
+    {
+    var cypherContext = canvasContexts[canvasName];
+    cypherContext.beginPath();
+    cypherContext.moveTo(coordinateArray[0], coordinateArray[1]);
+    var tempIndex = 2;
+    while (tempIndex < coordinateArray.length)
+    {
+    cypherContext.lineTo(coordinateArray[tempIndex], coordinateArray[tempIndex + 1]);
+    tempIndex += 2;
+    }
+    cypherContext.closePath();
+    cypherContext.fill();
+    }
+    cypherEvent = 0
+    nextTagId = 0
+    tagIdStack = ["body"]
+    tagIdStackIndex = 0
+    canvasContexts = []
+    classParents = []
+    var square_amount = 250
+    var count = 0
+    while((count < square_amount))
+    {
+    var color = "black"
+    if((0 == (count % 2)))
+    {
+    color = "blue"
+    }
+    if((0 == (count % 3)))
+    {
+    color = "red"
+    }
+    if((0 == (count % 2)) && (0 == (count % 3)))
+    {
+    color = "orange"
+    }
+    tagIdStackIndex += 1
+    var tagId = "div." + count
+    tagIdStack[tagIdStackIndex] = tagId
+    var tagParentId = tagIdStack[tagIdStackIndex - 1]
+    addTag(tagId, "div", tagParentId)
+    document.getElementById(tagId).style["background"] = color
+    document.getElementById(tagId).style["width"] = "5px"
+    document.getElementById(tagId).style["height"] = "5px"
+    document.getElementById(tagId).style["float"] = "left"
+    document.getElementById(tagId).style["position"] = "absolute"
+    tagIdStackIndex -= 1
+    
+    count += 1
+    }
+    var angle = 0
+    function move()
+    {
+    var count = 0
+    while((count < square_amount))
+    {
+    var temp_angle = (angle * (count / 3.0))
+    var temp_radius = (250 - count)
+    document.getElementById("div." + count).style["left"] = (250 + (temp_radius * Math.sin(temp_angle)))
+    document.getElementById("div." + count).style["top"] = (250 + (temp_radius * Math.cos(temp_angle)))
+    count += 1
+    }
+    angle += 0.0015
+    }
+    setInterval("" + "move" + "()", 30);
+    </script>
+    </body></html>
