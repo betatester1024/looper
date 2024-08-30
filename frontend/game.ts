@@ -421,7 +421,7 @@ function newRound() {
   roundCt++;
   maxLooperHealth += 4;
   maxStress *= 1.03;
-  looperCt = Math.min(50, looperCt+2);
+  looperCt += 2;
   for (let i=0; i<looperCt; i++) 
     addRandomLooper();
   if (Math.random() < K.PROB_AddLoop) addRandomLoop();
