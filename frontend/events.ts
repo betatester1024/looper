@@ -18,7 +18,7 @@ function registerEvents() {
 function evRedirector_pMove(event:MouseEvent|TouchEvent) {
   if (event.type.startsWith('touch')) {
     event.preventDefault();
-    console.log("touch move");
+    // console.log("touch move");
     event = event as TouchEvent;
     onMove({x:event.touches[0].clientX, y:event.touches[0].clientY});
   } else {
@@ -31,9 +31,10 @@ function evRedirector_pMove(event:MouseEvent|TouchEvent) {
 function evRedirector_pDown(event:TouchEvent|MouseEvent) {
   if (event.type.startsWith('touch')) {
     event.preventDefault();
-    console.log("touch event");
+    // console.log("touch event");
     event = event as TouchEvent;
     let p = {x:event.touches[0].clientX, y:event.touches[0].clientY};
+    onMove(p);
     onPointerDown(p);
     
   } else {
@@ -105,8 +106,8 @@ function reposition(n:number) {
   let b = byId("building"+n) as HTMLDivElement;
   let gcp = getComputedStyle(ele);
   let delta = Number(gcp.height.replace("px", "")) + b.getBoundingClientRect().top - window.innerHeight;
-  console.log(delta);
-  if (delta > 0) ele.style.top = b.getBoundingClientRect().top  
+  // console.log(delta);
+  if (delta > -30) ele.style.top = b.getBoundingClientRect().top  
     - 30
     - delta + "px";
   else ele.style.top = b.getBoundingClientRect().top  
@@ -259,7 +260,7 @@ function UIPurchase(n:number) {
   UIRefreshRequest = K.UIREFRESH_All;
 }
 function canvPos(l:Loop) {
-  return {x:x(l.loc), y:y(l.loc)};
+  return {x:x(l), y:y(l)};
 }
 function nearestLoop(p:Point, acceptRad:number=9e99) {
   let nearestDist = 9e99;
@@ -278,8 +279,8 @@ function nearestLooper(p:Point, acceptRad:number=9e99) {
   for (let l of loopers) {
     let c = K.SIZE_Loop*Math.cos(2*Math.PI*l.loopPct);
     let s = K.SIZE_Loop*Math.sin(2*Math.PI*l.loopPct);
-    let x2 = x(l.loc)+c;
-    let y2 = y(l.loc)+s;
+    let x2 = x(l)+c;
+    let y2 = y(l)+s;
     if (distBtw({x:x2, y:y2}, p) < nearestDist) {
       nearestDist = distBtw({x:x2, y:y2}, p);
       nearestLooper = l;
@@ -395,12 +396,12 @@ function onPointerDown(ev:Point) {
     canv.style.cursor = "all-scroll"
     holdState = K.HOLD_Translate;
   }
-  console.log("pointerdown")
+  // console.log("pointerdown")
 }
 function onPointerUp(ev:any) {
   holdState = K.HOLD_None;
   canv.style.cursor = "default";
-  console.log("pointerup")
+  // console.log("pointerup")
 }
 function keyUpdate(ev:KeyboardEvent) {}
 function onWheel(ev:WheelEvent) {

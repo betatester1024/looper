@@ -10,6 +10,7 @@ const K = {
   COLOUR_Select:"#0cc",
   COLOUR_Pending:"#c00",
   COLOUR_Inactive:"#555",
+  COLOUR_Alert: "#c00",
   COLOUR_Beam:"#000",
 
   SPEED_Base:0.3,
@@ -24,18 +25,21 @@ const K = {
   TYPE_Looper:2,
 
   TIME_Tooltip: 500,
-  TIME_Failure:20000,
+  TIME_GameLoss:20000,
   TIME_Round:30000,
   TIME_Refresh:15,
   TIME_Build:2000,
   TIME_AddLoop:200,
   TIME_BeamAnim:500,
+  TIME_FailAnim:300,
+  TIME_LoopFail:3000,
   TIME_SellBuilding:45000,
   TIME_LooperDestructAnim:500,
 
   MISC_CostRecovery:0.75,
+  MISC_MaxLooperCt:10,
 
-  STRESS_Base:1, // 1 stress/sec
+  STRESS_Base:0.7, // +0.7 stress/sec
   STRESS_Minimum:0.01,
 
   PROB_Exit:0.5,
@@ -48,18 +52,27 @@ const K = {
 
 
 
-interface Looper {
-  energy:number,
-  status:number,
-  removalTime:number,
-  loc:Point,
-  health:number,
-  totalHealth:number,
-  stress:number,
-  loopPct:number,
-  stressFactor:number,
-  cw:boolean,
-  speed:number // percent/sec
+class Looper {
+  energy:number = 30;
+  status:number=0;
+  removalTime:number=-1;
+  loc:Point;
+  health:number;
+  totalHealth:number;
+  stress:number = 0;
+  loopPct:number;
+  stressFactor:number = 1;
+  cw:boolean;
+  speed:number; // percent/sec
+  constructor(loop:Loop, looperHealth:number) 
+  {
+    this.loc = {x:loop.loc.x, y:loop.loc.y};
+    this.health = looperHealth;
+    this.totalHealth = looperHealth; 
+    this.loopPct = Math.random();
+    this.cw = rand([true, false]);
+    this.speed = K.SPEED_Base;
+  }
 }
 
 function loopersAt(loc:Point){
@@ -80,10 +93,19 @@ interface AttackInfo {
 }
 
 
-interface Loop {
-  loc:Point,
-  addTime:number
-  building:Building|null
+class Loop {
+  loc:Point;
+  addTime:number;
+  building:Building|null = null;
+  failPct:number = 0;
+  failTime:number = 0;
+  animX?:number;
+  animY?:number;
+  constructor(loc:Point) 
+  {
+    this.loc = loc; 
+    this.addTime = timeNow();
+  }
 }
 interface animInfo {
   loc:Point,
@@ -176,13 +198,13 @@ function preLoad() {
   initLooper();
 }
 function addRandomLooper() {
+  if (loops.length == 0) return;
   let loop = rand(loops);
   let looperHealth = minLooperHealth + Math.random()*(maxLooperHealth-minLooperHealth);
-  loopers.push({status:0, removalTime:-1, loc:{x:loop.loc.x, y:loop.loc.y}, health: looperHealth, totalHealth:looperHealth, stress:0, 
-                loopPct:Math.random(), cw:rand([true, false]), speed:K.SPEED_Base,
-               energy:30, stressFactor:1});
+  loopers.push(new Looper(loop, looperHealth));
 }
 function addRandomLoop() {
+  if (loops.length == 0) return;
   // n^2 :l
   let possibleLocs = [];
   for (let l of loops) {
@@ -199,10 +221,10 @@ function addRandomLoop() {
       if (poss) possibleLocs.push({x:l.loc.x+dx[i], y:l.loc.y+dy[i]});
     }
   }
-  loops.push({loc:rand(possibleLocs), addTime: timeNow(), building:null});
+  loops.push(new Loop(rand(possibleLocs)));
 }
 function initLooper() {
-  loops.push({loc:{x:0, y:0}, addTime:timeNow(), building:null});
+  loops.push(new Loop({x:0, y:0}));
   addRandomLooper();
 }
 function modPos(v:number, m:number) {
@@ -241,12 +263,12 @@ function gameLoop() {
       stressNotification = false;
     }
     failureTime += delta;
-    if (failureTime > K.TIME_Failure) {
+    if (failureTime > K.TIME_GameLoss) {
       ephemeralDialog("You lose.");
       togglePause();
       clearGameArea();
     }
-    overloadTimer.style.width = (failureTime)/K.TIME_Failure*100 + "%";
+    overloadTimer.style.width = (failureTime)/K.TIME_GameLoss*100 + "%";
     stressLevel.style.animation = "blinkingRed 2s infinite";
   }
   else {
@@ -300,9 +322,38 @@ function gameLoop() {
     removedLoopers.splice(removedLoopers.indexOf(l), 1);
   }
   for (let loop of loops) {
+    if (loop.failTime > 0)  // irreversible failure
+    {
+      if (timeNow() - loop.failTime > K.TIME_FailAnim) {
+        loops.splice(loops.indexOf(loop), 1);
+        for (let i=0; i<loopers.length; i++) 
+        {
+          if (loopers[i].loc.x == loop.loc.x && loopers[i].loc.y == loop.loc.y) {
+            loopers.splice(i, 1);
+            i--;
+          }
+        }
+        if (loops.length == 0) {
+          togglePause();
+          clearGameArea();
+        }
+      }
+      continue;
+    }
     if (loop.building && timeNow() - loop.building.buildTime > K.TIME_Build) {
       loop.building.computeAttack();
     }  
+    if (loopersAt(loop.loc).length > K.MISC_MaxLooperCt) 
+    {
+      loop.failPct += delta/K.TIME_LoopFail;
+      if (loop.failPct > 1) {
+        loop.failTime = timeNow();
+        loop.animX = Math.random()-0.5;
+        loop.animY = Math.random()-0.5;
+      }
+    }
+    else 
+      loop.failPct = Math.max(0, loop.failPct - delta/K.TIME_LoopFail);
   }
   if (loopers.length == 0) newRound();
 }
@@ -354,7 +405,7 @@ function newRound() {
   nextRound = K.TIME_Round;
   roundCt++;
   maxLooperHealth += 4;
-  maxStress *= 1.05;
+  maxStress *= 1.03;
   looperCt = Math.min(50, looperCt+2);
   for (let i=0; i<looperCt; i++) 
     addRandomLooper();

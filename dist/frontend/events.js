@@ -18,7 +18,6 @@ function registerEvents() {
 function evRedirector_pMove(event) {
     if (event.type.startsWith('touch')) {
         event.preventDefault();
-        console.log("touch move");
         event = event;
         onMove({ x: event.touches[0].clientX, y: event.touches[0].clientY });
     }
@@ -30,9 +29,9 @@ function evRedirector_pMove(event) {
 function evRedirector_pDown(event) {
     if (event.type.startsWith('touch')) {
         event.preventDefault();
-        console.log("touch event");
         event = event;
         let p = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+        onMove(p);
         onPointerDown(p);
     }
     else {
@@ -101,8 +100,7 @@ function reposition(n) {
     let b = byId("building" + n);
     let gcp = getComputedStyle(ele);
     let delta = Number(gcp.height.replace("px", "")) + b.getBoundingClientRect().top - window.innerHeight;
-    console.log(delta);
-    if (delta > 0)
+    if (delta > -30)
         ele.style.top = b.getBoundingClientRect().top
             - 30
             - delta + "px";
@@ -259,7 +257,7 @@ function UIPurchase(n) {
     UIRefreshRequest = K.UIREFRESH_All;
 }
 function canvPos(l) {
-    return { x: x(l.loc), y: y(l.loc) };
+    return { x: x(l), y: y(l) };
 }
 function nearestLoop(p, acceptRad = 9e99) {
     let nearestDist = 9e99;
@@ -278,8 +276,8 @@ function nearestLooper(p, acceptRad = 9e99) {
     for (let l of loopers) {
         let c = K.SIZE_Loop * Math.cos(2 * Math.PI * l.loopPct);
         let s = K.SIZE_Loop * Math.sin(2 * Math.PI * l.loopPct);
-        let x2 = x(l.loc) + c;
-        let y2 = y(l.loc) + s;
+        let x2 = x(l) + c;
+        let y2 = y(l) + s;
         if (distBtw({ x: x2, y: y2 }, p) < nearestDist) {
             nearestDist = distBtw({ x: x2, y: y2 }, p);
             nearestLooper = l;
@@ -398,12 +396,10 @@ function onPointerDown(ev) {
         canv.style.cursor = "all-scroll";
         holdState = K.HOLD_Translate;
     }
-    console.log("pointerdown");
 }
 function onPointerUp(ev) {
     holdState = K.HOLD_None;
     canv.style.cursor = "default";
-    console.log("pointerup");
 }
 function keyUpdate(ev) { }
 function onWheel(ev) {
