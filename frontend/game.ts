@@ -38,6 +38,7 @@ const K = {
 
   MISC_CostRecovery:0.75,
   MISC_MaxLooperCt:10,
+  MISC_AnimDist: 20, // distance loop wiggles when exploding
 
   STRESS_Base:0.7, // +0.7 stress/sec
   STRESS_Minimum:0.01,

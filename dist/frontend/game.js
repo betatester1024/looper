@@ -33,6 +33,7 @@ const K = {
     TIME_LooperDestructAnim: 500,
     MISC_CostRecovery: 0.75,
     MISC_MaxLooperCt: 10,
+    MISC_AnimDist: 20,
     STRESS_Base: 0.7,
     STRESS_Minimum: 0.01,
     PROB_Exit: 0.5,

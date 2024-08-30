@@ -128,16 +128,26 @@ function redraw(time:DOMHighResTimeStamp=performance.now()) {
   ctx.restore();
 }
 
-function x(l:Loop|Looper) {
+function x(l:Loop|Looper|animInfo) {
   
   let loc = l.loc;
-  if (l instanceof Looper || l.failTime <= 0) 
-    return loc.x*2*K.SIZE_Loop;
+  if (l instanceof Loop && l.failTime > 0)
+  {
+    let dx = l.animX!*K.MISC_AnimDist;
+    return loc.x*2*K.SIZE_Loop + dx;
+  }
   else {
-    
+    return loc.x*2*K.SIZE_Loop;
   }
 }
-function y(l:Loop|Looper) {
+function y(l:Loop|Looper|animInfo) {
   let loc = l.loc;
-  return loc.y*2*K.SIZE_Loop;
+  if (l instanceof Loop && l.failTime > 0)
+  {
+    let dy = l.animY!*K.MISC_AnimDist;
+    return loc.x*2*K.SIZE_Loop + dy;
+  }
+  else {
+    return loc.x*2*K.SIZE_Loop;
+  }
 }
