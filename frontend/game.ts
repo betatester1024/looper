@@ -25,20 +25,20 @@ const K = {
   TYPE_Looper:2,
 
   TIME_Tooltip: 500,
-  TIME_GameLoss:20000,
-  TIME_Round:30000,
+  TIME_GameLoss:20000, // 20000
+  TIME_Round:30000, // 30000
   TIME_Refresh:15,
   TIME_Build:2000,
   TIME_AddLoop:200,
   TIME_BeamAnim:500,
-  TIME_FailAnim:300,
+  TIME_FailAnim:700,
   TIME_LoopFail:3000,
   TIME_SellBuilding:45000,
   TIME_LooperDestructAnim:500,
 
   MISC_CostRecovery:0.75,
   MISC_MaxLooperCt:10,
-  MISC_AnimDist: 20, // distance loop wiggles when exploding
+  MISC_AnimDist:50, // distance loop wiggles when exploding
 
   STRESS_Base:0.7, // +0.7 stress/sec
   STRESS_Minimum:0.01,
@@ -107,12 +107,12 @@ class Loop {
   building:Building|null = null;
   failPct:number = 0;
   failTime:number = 0;
-  animX?:number;
-  animY?:number;
+  animX:number;
   constructor(loc:Point) 
   {
     this.loc = loc; 
     this.addTime = timeNow();
+    this.animX = Math.random() - 0.5;
   }
 }
 interface animInfo {
@@ -340,7 +340,7 @@ function gameLoop() {
   for (let loop of loops) {
     if (loop.failTime > 0)  // irreversible failure
     {
-      if (timeNow() - loop.failTime > K.TIME_FailAnim) {
+      if (timeNow() - loop.failTime > K.TIME_FailAnim && !gameLost) {
         loops.splice(loops.indexOf(loop), 1);
         for (let i=0; i<loopers.length; i++) 
         {
@@ -364,11 +364,9 @@ function gameLoop() {
       loop.failPct += delta/K.TIME_LoopFail;
       if (loop.failPct > 1) {
         loop.failTime = timeNow();
-        loop.animX = 1//Math.random()-0.5;
-        loop.animY = 1//Math.random()-0.5;
       }
     }
-    else 
+    else if (!gameLost)
       loop.failPct = Math.max(0, loop.failPct - delta/K.TIME_LoopFail);
   }
   if (loopers.length == 0) newRound();

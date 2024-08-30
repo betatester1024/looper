@@ -27,13 +27,13 @@ const K = {
     TIME_Build: 2000,
     TIME_AddLoop: 200,
     TIME_BeamAnim: 500,
-    TIME_FailAnim: 300,
+    TIME_FailAnim: 700,
     TIME_LoopFail: 3000,
     TIME_SellBuilding: 45000,
     TIME_LooperDestructAnim: 500,
     MISC_CostRecovery: 0.75,
     MISC_MaxLooperCt: 10,
-    MISC_AnimDist: 20,
+    MISC_AnimDist: 50,
     STRESS_Base: 0.7,
     STRESS_Minimum: 0.01,
     PROB_Exit: 0.5,
@@ -88,10 +88,10 @@ class Loop {
     failPct = 0;
     failTime = 0;
     animX;
-    animY;
     constructor(loc) {
         this.loc = loc;
         this.addTime = timeNow();
+        this.animX = Math.random() - 0.5;
     }
 }
 function onLoad() {
@@ -308,7 +308,7 @@ function gameLoop() {
     }
     for (let loop of loops) {
         if (loop.failTime > 0) {
-            if (timeNow() - loop.failTime > K.TIME_FailAnim) {
+            if (timeNow() - loop.failTime > K.TIME_FailAnim && !gameLost) {
                 loops.splice(loops.indexOf(loop), 1);
                 for (let i = 0; i < loopers.length; i++) {
                     if (loopers[i].loc.x == loop.loc.x && loopers[i].loc.y == loop.loc.y) {
@@ -330,11 +330,9 @@ function gameLoop() {
             loop.failPct += delta / K.TIME_LoopFail;
             if (loop.failPct > 1) {
                 loop.failTime = timeNow();
-                loop.animX = 1;
-                loop.animY = 1;
             }
         }
-        else
+        else if (!gameLost)
             loop.failPct = Math.max(0, loop.failPct - delta / K.TIME_LoopFail);
     }
     if (loopers.length == 0)

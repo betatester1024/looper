@@ -128,6 +128,9 @@ function redraw(time = performance.now()) {
 }
 function x(l) {
     let loc = l.loc;
+    if (l instanceof Looper) {
+        l = loopAt(l.loc);
+    }
     if (l instanceof Loop && l.failTime > 0) {
         let dx = l.animX * (timeNow() - l.failTime) / K.TIME_FailAnim * K.MISC_AnimDist;
         return loc.x * 2 * K.SIZE_Loop + dx;
@@ -143,7 +146,7 @@ function y(l) {
     }
     if (l instanceof Loop && l.failTime > 0) {
         let pct = (timeNow() - l.failTime) / K.TIME_FailAnim;
-        return loc.y * 2 * K.SIZE_Loop + 80 * pct * pct;
+        return loc.y * 2 * K.SIZE_Loop + 160 * pct * pct;
     }
     else {
         return loc.y * 2 * K.SIZE_Loop;
