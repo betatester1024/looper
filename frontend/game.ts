@@ -84,6 +84,13 @@ function loopersAt(loc:Point){
   return out;
 }
 
+function loopAt(loc:Point){
+  for (let i=0; i<loops.length; i++) {
+    if (loops[i].loc.x == loc.x && loops[i].loc.y == loc.y) return loops[i]
+  }
+  return null;
+}
+
 function rand(arr:any[]) {
   return arr[Math.floor(Math.random()*arr.length)];
 }
@@ -132,6 +139,7 @@ let totalStress = 0;
 let looperCt = 2;
 let maxStress = 200;
 let roundCt = 1;
+let gameLost = false;
 let energy = 300;
 let minLooperHealth = 10;
 let maxLooperHealth = 30;
@@ -264,10 +272,17 @@ function gameLoop() {
       stressNotification = false;
     }
     failureTime += delta;
-    if (failureTime > K.TIME_GameLoss) {
-      ephemeralDialog("You lose.");
-      togglePause();
-      clearGameArea();
+    if (failureTime > K.TIME_GameLoss && !gameLost) {
+      for (let l of loops) {
+        l.failTime = l.failTime>0 ? l.failTime : timeNow();
+        l.failPct = 1;
+      }
+      gameLost = true;
+      setTimeout(()=>{
+        ephemeralDialog("You lose.");
+        togglePause();
+        clearGameArea();  
+      }, K.TIME_FailAnim*2);
     }
     overloadTimer.style.width = (failureTime)/K.TIME_GameLoss*100 + "%";
     stressLevel.style.animation = "blinkingRed 2s infinite";
@@ -349,8 +364,8 @@ function gameLoop() {
       loop.failPct += delta/K.TIME_LoopFail;
       if (loop.failPct > 1) {
         loop.failTime = timeNow();
-        loop.animX = Math.random()-0.5;
-        loop.animY = Math.random()-0.5;
+        loop.animX = 1//Math.random()-0.5;
+        loop.animY = 1//Math.random()-0.5;
       }
     }
     else 
@@ -379,6 +394,7 @@ function newGame() {
   holdState= K.HOLD_None;
   totalStress = 0;
   looperCt = 2;
+  gameLost = false;
   maxStress = 200;
   roundCt = 1;
   energy = 300;

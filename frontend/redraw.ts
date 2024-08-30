@@ -133,7 +133,7 @@ function x(l:Loop|Looper|animInfo) {
   let loc = l.loc;
   if (l instanceof Loop && l.failTime > 0)
   {
-    let dx = l.animX!*K.MISC_AnimDist;
+    let dx = l.animX!*(timeNow()-l.failTime)/K.TIME_FailAnim*K.MISC_AnimDist;
     return loc.x*2*K.SIZE_Loop + dx;
   }
   else {
@@ -142,12 +142,15 @@ function x(l:Loop|Looper|animInfo) {
 }
 function y(l:Loop|Looper|animInfo) {
   let loc = l.loc;
+  if (l instanceof Looper) {
+    l = loopAt(l.loc)!;
+  }
   if (l instanceof Loop && l.failTime > 0)
   {
-    let dy = l.animY!*K.MISC_AnimDist;
-    return loc.x*2*K.SIZE_Loop + dy;
+    let pct = (timeNow()-l.failTime)/K.TIME_FailAnim;
+    return loc.y*2*K.SIZE_Loop + 80*pct*pct;
   }
   else {
-    return loc.x*2*K.SIZE_Loop;
+    return loc.y*2*K.SIZE_Loop;
   }
 }
