@@ -450,8 +450,8 @@ class Energiser extends Building {
     }
 }
 class FastShooter extends Building {
-    static cost = 175;
-    static defaultCost = 175;
+    static cost = 200;
+    static defaultCost = 200;
     static char = "FS1";
     static name = "FastShot I";
     static genDesc = `Rapid firing but low damage.
@@ -655,8 +655,8 @@ class BetterDecelerator extends Building {
     }
 }
 class UltraFastShooter extends Building {
-    static cost = 200;
-    static defaultCost = 200;
+    static cost = 400;
+    static defaultCost = 400;
     static char = "FS2";
     static name = "FastShot II";
     static genDesc = `More rapid firing but even lower damage.

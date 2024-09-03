@@ -4,7 +4,6 @@ const K = {
     HOLD_Translate: 1,
     COLOUR_Default: "#444",
     COLOUR_Loop: "#666",
-    COLOUR_Looper: "#c00",
     COLOUR_Building: "#0000cc",
     COLOUR_Active: "#0c0",
     COLOUR_Select: "#0cc",
@@ -24,7 +23,7 @@ const K = {
     TIME_GameLoss: 20000,
     TIME_Round: 30000,
     TIME_Refresh: 15,
-    TIME_Build: 2000,
+    TIME_Build: 10000,
     TIME_AddLoop: 200,
     TIME_BeamAnim: 500,
     TIME_FailAnim: 700,
@@ -42,7 +41,14 @@ const K = {
     UIREFRESH_Cost: 1,
     UIREFRESH_All: 2,
 };
+let looperWeights = [10, 2, 0.1];
+let looperInfos = [
+    { healthFactor: 1, stressFactor: 1, energy: 50, colour: "#c00" },
+    { healthFactor: 3, stressFactor: 2, energy: 300, colour: "gold" },
+    { healthFactor: 5, stressFactor: 9, energy: 0, colour: "black" },
+];
 class Looper {
+    type;
     energy = 30;
     status = 0;
     removalTime = -1;
@@ -53,11 +59,26 @@ class Looper {
     loopPct;
     stressFactor = 1;
     cw;
+    colour;
     speed;
     constructor(loop, looperHealth) {
+        let totalWeights = 0;
+        for (let v of looperWeights)
+            totalWeights += v;
+        let rv = Math.random();
+        let sum = 0;
+        for (let i = 0; i < looperWeights.length; i++) {
+            sum += looperWeights[i] / totalWeights;
+            if (rv < sum) {
+                this.health = looperHealth * looperInfos[i].healthFactor;
+                this.energy = looperInfos[i].energy;
+                this.stressFactor = looperInfos[i].stressFactor;
+                this.colour = looperInfos[i].colour;
+                break;
+            }
+        }
         this.loc = { x: loop.loc.x, y: loop.loc.y };
-        this.health = looperHealth;
-        this.totalHealth = looperHealth;
+        this.totalHealth = this.health;
         this.loopPct = Math.random();
         this.cw = rand([true, false]);
         this.speed = K.SPEED_Base;
@@ -386,7 +407,7 @@ function newRound() {
     roundCt++;
     maxLooperHealth += 4;
     maxStress *= 1.03;
-    looperCt = Math.min(50, looperCt + 2);
+    looperCt += 2;
     for (let i = 0; i < looperCt; i++)
         addRandomLooper();
     if (Math.random() < K.PROB_AddLoop)

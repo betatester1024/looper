@@ -25,20 +25,7 @@ function redraw(time:DOMHighResTimeStamp=performance.now()) {
     ctx.lineTo(-viewportW/2, -viewportH/2);
     ctx.stroke();
   }
-  ctx.save();
-    ctx.resetTransform();
-    if (fpsCurr < 25) ctx.fillStyle = getCSSProp('--system-red');
-    else if (fpsCurr < 40) ctx.fillStyle = getCSSProp('--system-yellowtext');
-    else ctx.fillStyle = getCSSProp('--system-green');
-    ctx.font = "16px Noto Sans Display";
-    ctx.fillText(fpsCurr.toFixed(2)+"fps", 50, 120)
-    ctx.fillRect(40, 113.5, 5, 5);
-    if (paused) {
-      ctx.font = "30px Noto Sans Display";
-      ctx.fillStyle = getCSSProp("--system-blue");
-      ctx.fillText("Game paused.", 40, 150);
-    }
-  ctx.restore();
+  
   ctx.save();
   for (let a of animatingBeams) {
     ctx.save();
@@ -118,13 +105,27 @@ function redraw(time:DOMHighResTimeStamp=performance.now()) {
     let s = K.SIZE_Loop*Math.sin(Math.PI*2*l.loopPct);
     ctx.moveTo(x(l)+c, y(l)+s);
     ctx.arc(x(l)+c, y(l)+s, l.removalTime>0?Math.max(1-(timeNow()-l.removalTime)/K.TIME_LooperDestructAnim, 0)*K.SIZE_Looper:K.SIZE_Looper, 0, 2*Math.PI);
-    ctx.fillStyle = l.removalTime < 0?K.COLOUR_Looper:K.COLOUR_Inactive;
+    ctx.fillStyle = l.removalTime < 0?l.colour:K.COLOUR_Inactive;
     ctx.strokeStyle = K.COLOUR_Default;
     ctx.fill();
     ctx.beginPath();
     ctx.arc(x(l)+c, y(l)+s, K.SIZE_Looper, 0, 2*Math.PI*l.health/l.totalHealth);
     if (l.removalTime < 0) ctx.stroke();
   }
+  ctx.restore();
+  ctx.save();
+    ctx.resetTransform();
+    if (fpsCurr < 25) ctx.fillStyle = getCSSProp('--system-red');
+    else if (fpsCurr < 40) ctx.fillStyle = getCSSProp('--system-yellowtext');
+    else ctx.fillStyle = getCSSProp('--system-green');
+    ctx.font = "16px Noto Sans Display";
+    ctx.fillText(fpsCurr.toFixed(2)+"fps", 50, 120)
+    ctx.fillRect(40, 113.5, 5, 5);
+    if (paused) {
+      ctx.font = "30px Noto Sans Display";
+      ctx.fillStyle = getCSSProp("--system-blue");
+      ctx.fillText("Game paused.", 40, 150);
+    }
   ctx.restore();
 }
 
