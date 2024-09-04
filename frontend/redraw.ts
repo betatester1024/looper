@@ -6,90 +6,90 @@ function redraw(time:DOMHighResTimeStamp=performance.now()) {
   prevTime = time;
   let fpsCurr = 1000/delta;
   updateMinScl();
-  ctx.lineCap = "round";
-  ctx.strokeStyle = K.COLOUR_Default;
-  ctx.beginPath();
-  ctx.save();
-  ctx.resetTransform();
-  ctx.fillStyle = getCSSProp("--system-bg");
-  ctx.clearRect(0, 0, canv.width, canv.height);
-  ctx.fillRect(0, 0, canv.width, canv.height);
-  ctx.restore();
-  ctx.lineWidth = 3;
+  pCtx.lineCap = "round";
+  pCtx.strokeStyle = K.COLOUR_Default;
+  pCtx.beginPath();
+  pCtx.save();
+  pCtx.resetTransform();
+  pCtx.fillStyle = getCSSProp("--system-bg");
+  pCtx.clearRect(0, 0, pCanv.width, pCanv.height);
+  pCtx.fillRect(0, 0, pCanv.width, pCanv.height);
+  pCtx.restore();
+  pCtx.lineWidth = 3;
   if (DEBUG) {
-    ctx.beginPath();
-    ctx.moveTo(-viewportW / 2, -viewportH/2);
-    ctx.lineTo(viewportW / 2, -viewportH/2);
-    ctx.lineTo(viewportW / 2, viewportH/2);
-    ctx.lineTo(-viewportW/2, viewportH/2);
-    ctx.lineTo(-viewportW/2, -viewportH/2);
-    ctx.stroke();
+    pCtx.beginPath();
+    pCtx.moveTo(-viewportW / 2, -viewportH/2);
+    pCtx.lineTo(viewportW / 2, -viewportH/2);
+    pCtx.lineTo(viewportW / 2, viewportH/2);
+    pCtx.lineTo(-viewportW/2, viewportH/2);
+    pCtx.lineTo(-viewportW/2, -viewportH/2);
+    pCtx.stroke();
   }
   
-  ctx.save();
+  pCtx.save();
   for (let a of animatingBeams) {
-    ctx.save();
-    ctx.beginPath();
+    pCtx.save();
+    pCtx.beginPath();
     let c = K.SIZE_Loop*Math.cos(a.angle);
     let s = K.SIZE_Loop*Math.sin(a.angle);
-    ctx.strokeStyle = K.COLOUR_Beam;//((timeNow()-a.aStart)/K.TIME_BeamAnim*16).toString(16);
-    ctx.globalAlpha = Math.max(1-(timeNow()-a.aStart)/K.TIME_BeamAnim, 0);
-    ctx.moveTo(x(a), y(a));
-    ctx.lineTo(x(a)+c, y(a)+s);
-    ctx.stroke();
-    ctx.restore();
+    pCtx.strokeStyle = K.COLOUR_Beam;//((timeNow()-a.aStart)/K.TIME_BeamAnim*16).toString(16);
+    pCtx.globalAlpha = Math.max(1-(timeNow()-a.aStart)/K.TIME_BeamAnim, 0);
+    pCtx.moveTo(x(a), y(a));
+    pCtx.lineTo(x(a)+c, y(a)+s);
+    pCtx.stroke();
+    pCtx.restore();
   }
   for (let l of loops) {
-    ctx.beginPath();
-    ctx.arc(x(l), y(l), K.SIZE_Loop*Math.min(1, (timeNow()-l.addTime)/K.TIME_AddLoop), 0, 2*Math.PI);
-    ctx.strokeStyle = (l == modifLoop?K.COLOUR_Select:K.COLOUR_Loop);
-    ctx.stroke();
+    pCtx.beginPath();
+    pCtx.arc(x(l), y(l), K.SIZE_Loop*Math.min(1, (timeNow()-l.addTime)/K.TIME_AddLoop), 0, 2*Math.PI);
+    pCtx.strokeStyle = (l == modifLoop?K.COLOUR_Select:K.COLOUR_Loop);
+    pCtx.stroke();
     if (l.failPct > 0) 
     {
-      ctx.save();
-      ctx.beginPath();
-      ctx.globalAlpha = 0.6;
-      ctx.fillStyle = K.COLOUR_Alert;
-      ctx.moveTo(x(l), y(l));
-      ctx.arc(x(l), y(l), K.SIZE_Loop, 0, 2*Math.PI*l.failPct);
-      ctx.lineTo(x(l), y(l));
-      ctx.fill();
-      ctx.restore();
+      pCtx.save();
+      pCtx.beginPath();
+      pCtx.globalAlpha = 0.6;
+      pCtx.fillStyle = K.COLOUR_Alert;
+      pCtx.moveTo(x(l), y(l));
+      pCtx.arc(x(l), y(l), K.SIZE_Loop, 0, 2*Math.PI*l.failPct);
+      pCtx.lineTo(x(l), y(l));
+      pCtx.fill();
+      pCtx.restore();
     }
     if (l.building) {
       let bPct = (timeNow() - l.building.buildTime)/K.TIME_Build;
       let cPercent = bPct>1?l.building.chargePercentage():bPct;
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(x(l), y(l), K.SIZE_Building, 0, 2*Math.PI);
-      ctx.lineWidth = 5;
-      ctx.stroke();
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
+      pCtx.save();
+      pCtx.beginPath();
+      pCtx.arc(x(l), y(l), K.SIZE_Building, 0, 2*Math.PI);
+      pCtx.lineWidth = 5;
+      pCtx.stroke();
+      pCtx.textAlign = "center";
+      pCtx.textBaseline = "middle";
       let clr2 = K.COLOUR_Building+Math.floor(bPct*256).toString(16).padStart(2, '0');
       // console.log(clr2);
-      ctx.fillStyle = bPct>1?K.COLOUR_Building:clr2
-      ctx.fill();
-      ctx.font = "16px Noto Sans Display";
-      ctx.fillStyle = "#fff";
-      ctx.fillText(getStaticVars(l.building).char, x(l), y(l));
-      ctx.beginPath();
+      pCtx.fillStyle = bPct>1?K.COLOUR_Building:clr2
+      pCtx.fill();
+      pCtx.font = "16px Noto Sans Display";
+      pCtx.fillStyle = "#fff";
+      pCtx.fillText(getStaticVars(l.building).char, x(l), y(l));
+      pCtx.beginPath();
       
-      ctx.strokeStyle = K.COLOUR_Active;
+      pCtx.strokeStyle = K.COLOUR_Active;
       if (bPct < 1) {
-        ctx.strokeStyle = K.COLOUR_Pending;
+        pCtx.strokeStyle = K.COLOUR_Pending;
       }
       if (cPercent < 0) {
         cPercent = Math.abs(cPercent);
-        ctx.strokeStyle = K.COLOUR_Inactive;
+        pCtx.strokeStyle = K.COLOUR_Inactive;
       }
       if (cPercent > 0) {
-        ctx.beginPath();
+        pCtx.beginPath();
         
-        ctx.arc(x(l), y(l), K.SIZE_Building+2, 0, 2*Math.PI*cPercent);
-        ctx.stroke();
+        pCtx.arc(x(l), y(l), K.SIZE_Building+2, 0, 2*Math.PI*cPercent);
+        pCtx.stroke();
       }
-      ctx.restore();
+      pCtx.restore();
     }
   }
   for (let l of removedLoopers) {
@@ -100,33 +100,33 @@ function redraw(time:DOMHighResTimeStamp=performance.now()) {
   }
  
   function drawLooper(l:Looper) {
-    ctx.beginPath();
+    pCtx.beginPath();
     let c = K.SIZE_Loop*Math.cos(Math.PI*2*l.loopPct);
     let s = K.SIZE_Loop*Math.sin(Math.PI*2*l.loopPct);
-    ctx.moveTo(x(l)+c, y(l)+s);
-    ctx.arc(x(l)+c, y(l)+s, l.removalTime>0?Math.max(1-(timeNow()-l.removalTime)/K.TIME_LooperDestructAnim, 0)*K.SIZE_Looper:K.SIZE_Looper, 0, 2*Math.PI);
-    ctx.fillStyle = l.removalTime < 0?l.colour:K.COLOUR_Inactive;
-    ctx.strokeStyle = K.COLOUR_Default;
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(x(l)+c, y(l)+s, K.SIZE_Looper, 0, 2*Math.PI*l.health/l.totalHealth);
-    if (l.removalTime < 0) ctx.stroke();
+    pCtx.moveTo(x(l)+c, y(l)+s);
+    pCtx.arc(x(l)+c, y(l)+s, l.removalTime>0?Math.max(1-(timeNow()-l.removalTime)/K.TIME_LooperDestructAnim, 0)*K.SIZE_Looper:K.SIZE_Looper, 0, 2*Math.PI);
+    pCtx.fillStyle = l.removalTime < 0?l.colour:K.COLOUR_Inactive;
+    pCtx.strokeStyle = K.COLOUR_Default;
+    pCtx.fill();
+    pCtx.beginPath();
+    pCtx.arc(x(l)+c, y(l)+s, K.SIZE_Looper, 0, 2*Math.PI*l.health/l.totalHealth);
+    if (l.removalTime < 0) pCtx.stroke();
   }
-  ctx.restore();
-  ctx.save();
-    ctx.resetTransform();
-    if (fpsCurr < 25) ctx.fillStyle = getCSSProp('--system-red');
-    else if (fpsCurr < 40) ctx.fillStyle = getCSSProp('--system-yellowtext');
-    else ctx.fillStyle = getCSSProp('--system-green');
-    ctx.font = "16px Noto Sans Display";
-    ctx.fillText(fpsCurr.toFixed(2)+"fps", 50, 120)
-    ctx.fillRect(40, 113.5, 5, 5);
+  pCtx.restore();
+  pCtx.save();
+    pCtx.resetTransform();
+    if (fpsCurr < 25) pCtx.fillStyle = getCSSProp('--system-red');
+    else if (fpsCurr < 40) pCtx.fillStyle = getCSSProp('--system-yellowtext');
+    else pCtx.fillStyle = getCSSProp('--system-green');
+    pCtx.font = "16px Noto Sans Display";
+    pCtx.fillText(fpsCurr.toFixed(2)+"fps", 50, 120)
+    pCtx.fillRect(40, 113.5, 5, 5);
     if (paused) {
-      ctx.font = "30px Noto Sans Display";
-      ctx.fillStyle = getCSSProp("--system-blue");
-      ctx.fillText("Game paused.", 40, 150);
+      pCtx.font = "30px Noto Sans Display";
+      pCtx.fillStyle = getCSSProp("--system-blue");
+      pCtx.fillText("Game paused.", 40, 150);
     }
-  ctx.restore();
+  pCtx.restore();
 }
 
 function x(l:Loop|Looper|animInfo) {
@@ -157,4 +157,9 @@ function y(l:Loop|Looper|animInfo) {
   else {
     return loc.y*2*K.SIZE_Loop;
   }
+}
+
+function pgredraw() 
+{
+
 }

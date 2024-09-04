@@ -21,8 +21,8 @@ function withinViewport(newPt:Point) {
 
 function updateMinScl(newVal:number = minSclFac) {
   minSclFac = newVal;
-  viewportW = canv.width / minSclFac * 0.4;
-  viewportH = canv.height / minSclFac * 0.4;
+  viewportW = pCanv.width / minSclFac * 0.4;
+  viewportH = pCanv.height / minSclFac * 0.4;
   viewportMax = Math.max(viewportW, viewportH);
   viewportMin = Math.min(viewportW, viewportH);
 }
@@ -30,23 +30,23 @@ function updateMinScl(newVal:number = minSclFac) {
 /// the matrix stuff :V
 let transfm = [1, 0, 0,
                0, 1, 0];
-function translate(x:number, y:number) {
+function translate(ctx:CanvasRenderingContext2D, x:number, y:number) {
   transfm[2] += x;
   transfm[5] += y;
-  applyTransfm();
+  applyTransfm(ctx);
 }
 function fromCanvPos(canvX:number, canvY:number) {
   return { x: (canvX - transfm[2]) / transfm[0], y: (canvY - transfm[5]) / transfm[4] };
 }
-function scale(scl:number) {
+function scale(ctx:CanvasRenderingContext2D, scl:number) {
   // matrix mult with [
   // sclX 0
   // 0  sclY
   // 0  0
   for (let i = 0; i < 6; i++) transfm[i] *= scl;
-  applyTransfm();
+  applyTransfm(ctx);
 }
-function applyTransfm() {
-  ctx.setTransform(transfm[0], transfm[3], transfm[1], transfm[4], transfm[2], transfm[5]);
+function applyTransfm(c:CanvasRenderingContext2D) {
+  c.setTransform(transfm[0], transfm[3], transfm[1], transfm[4], transfm[2], transfm[5]);
 }
 

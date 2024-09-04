@@ -180,8 +180,10 @@ let stressNotification = true;
 let nextRound = K.TIME_Round;
 let pauseStart = -1;
 let tickCounter_lastTime = Date.now();
-let canv:HTMLCanvasElement;
-let ctx:CanvasRenderingContext2D;
+let pCanv:HTMLCanvasElement;
+let sCanv:HTMLCanvasElement;
+let pCtx:CanvasRenderingContext2D;
+let sCtx:CanvasRenderingContext2D;
 
 function timeNow() {
   return globalTicks;
@@ -209,8 +211,12 @@ function togglePause() {
 }
 function preLoad() {
   registerMaximisingCanvas("canv", 1, 1, redraw);
+  pCanv = byId("canv") as HTMLCanvasElement;
+  pCtx = pCanv.getContext("2d") as CanvasRenderingContext2D;
+  sCanv = byId("postgamecanv") as HTMLCanvasElement;
+  sCtx = sCanv.getContext("2d") as CanvasRenderingContext2D;
+  registerMaximisingCanvas("postgamecanv", 1, 1, pgredraw);
   registerEvents();
-  translate(canv.width/2, canv.height/2);
   let sidebar = byId("sidebar") as HTMLDivElement;
   for (let i=0; i<buildingTypes.length; i++) {
     let ty = buildingTypes[i];
@@ -458,18 +464,24 @@ function newRound() {
 
 
 function registerMaximisingCanvas(id:string, widthPc:number, heightPc:number, redrawFcn:()=>void) { // (id:string, widthPc:number, heightPc:number, redrawFcn:()=>any) {
-  canv = byId(id) as HTMLCanvasElement;
-  ctx = canv.getContext("2d") as CanvasRenderingContext2D;
+  let c = byId(id) as HTMLCanvasElement;
   window.addEventListener("resize", (ev) => {
-    canv.width = window.innerWidth * widthPc;
-    canv.height = window.innerHeight * heightPc;
+    c.width = window.innerWidth * widthPc;
+    c.height = window.innerHeight * heightPc;
     // everything is gone - restore it!
-    applyTransfm();
+    applyTransfm(c.getContext("2d") as CanvasRenderingContext2D);
     redrawFcn();
   })
   // canv.style.height = 100 * heightPc + "vh";
   // canv.style.width = 100 * widthPc + "vw";
-  canv.width = window.innerWidth * widthPc;
-  canv.height = window.innerHeight * heightPc;
+  c.width = window.innerWidth * widthPc;
+  c.height = window.innerHeight * heightPc;
   redrawFcn();
+}
+
+function registerTransformableCanvas(id:string, redrawFcn:()=>void) 
+{
+  let c = byId(id) as HTMLCanvasElement;
+  let ctx = c.getContext("2d") as CanvasRenderingContext2D;
+  translate(ctx, c.width/2, c.height/2);
 }
