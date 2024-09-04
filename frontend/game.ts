@@ -1,6 +1,7 @@
 const K = {
   HOLD_None:0,
-  HOLD_Translate:1,
+  HOLD_TranslateP:1,
+  HOLD_TranslateS:2,
 
   COLOUR_Default:"#444",
   COLOUR_Loop:"#666",
@@ -210,12 +211,14 @@ function togglePause() {
   paused = !paused;
 }
 function preLoad() {
-  registerMaximisingCanvas("canv", 1, 1, redraw);
   pCanv = byId("canv") as HTMLCanvasElement;
   pCtx = pCanv.getContext("2d") as CanvasRenderingContext2D;
+  pData = {ctx:pCtx, transfm:[1, 0, 0, 0, 1, 0]};
   sCanv = byId("postgamecanv") as HTMLCanvasElement;
   sCtx = sCanv.getContext("2d") as CanvasRenderingContext2D;
-  registerMaximisingCanvas("postgamecanv", 1, 1, pgredraw);
+  sData = {ctx:sCtx, transfm:[1, 0, 0, 0, 1, 0]};
+  registerTransformableCanvas("canv", redraw);
+  registerTransformableCanvas("postgamecanv", pgredraw);
   registerEvents();
   let sidebar = byId("sidebar") as HTMLDivElement;
   for (let i=0; i<buildingTypes.length; i++) {
@@ -230,7 +233,6 @@ function preLoad() {
     <p class="preserveLines">${ty.genDesc}</p></div>`;
     
   }
-  setInterval(redraw, K.TIME_Refresh);
   setInterval(()=>{
     if (!paused) {
       globalTicks += Date.now() - tickCounter_lastTime;
@@ -469,7 +471,7 @@ function registerMaximisingCanvas(id:string, widthPc:number, heightPc:number, re
     c.width = window.innerWidth * widthPc;
     c.height = window.innerHeight * heightPc;
     // everything is gone - restore it!
-    applyTransfm(c.getContext("2d") as CanvasRenderingContext2D);
+    applyTransfm(getTransfmData(c));
     redrawFcn();
   })
   // canv.style.height = 100 * heightPc + "vh";
@@ -482,6 +484,7 @@ function registerMaximisingCanvas(id:string, widthPc:number, heightPc:number, re
 function registerTransformableCanvas(id:string, redrawFcn:()=>void) 
 {
   let c = byId(id) as HTMLCanvasElement;
-  let ctx = c.getContext("2d") as CanvasRenderingContext2D;
-  translate(ctx, c.width/2, c.height/2);
+  registerMaximisingCanvas(id, 1, 1, redrawFcn);
+  translate(getTransfmData(c), c.width/2, c.height/2);
+  setInterval(redrawFcn, K.TIME_Refresh);
 }

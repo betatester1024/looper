@@ -161,5 +161,12 @@ function y(l:Loop|Looper|animInfo) {
 
 function pgredraw() 
 {
-
+  sCtx.save();
+    sCtx.resetTransform();
+    sCtx.clearRect(0, 0, sCanv.width, sCanv.height);
+  sCtx.restore();
+  sCtx.beginPath();
+  sCtx.moveTo(-sCanv.width/2, -sCanv.height/2);
+  sCtx.lineTo(sCanv.width/2, sCanv.height/2); 
+  sCtx.stroke();
 }

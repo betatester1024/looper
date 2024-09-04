@@ -12,6 +12,7 @@ function registerEvents() {
   window.addEventListener("mouseup", onPointerUp);
   window.addEventListener("touchend", onPointerUp);
   pCanv.addEventListener("wheel", onWheel)
+  sCanv.addEventListener("wheel", onWheel)
   setInterval(uiEvents, 100);
 
   vis(()=>{
@@ -20,31 +21,33 @@ function registerEvents() {
 }
 
 function evRedirector_pMove(event:MouseEvent|TouchEvent) {
+  let evTarget = event.target as HTMLCanvasElement;
   if (event.type.startsWith('touch')) {
     event.preventDefault();
     // console.log("touch move");
     event = event as TouchEvent;
-    onMove({x:event.touches[0].clientX, y:event.touches[0].clientY});
+    onMove_p(evTarget, {x:event.touches[0].clientX, y:event.touches[0].clientY});
   } else {
     // For mouse events
     event = event as MouseEvent;
-    onMove({x:event.clientX, y:event.clientY});
+    onMove_p(evTarget, {x:event.clientX, y:event.clientY});
   }
 }
 
 function evRedirector_pDown(event:TouchEvent|MouseEvent) {
+  let evTarget = event.target as HTMLCanvasElement;
   if (event.type.startsWith('touch')) {
     event.preventDefault();
     // console.log("touch event");
     event = event as TouchEvent;
     let p = {x:event.touches[0].clientX, y:event.touches[0].clientY};
-    onMove(p);
-    onPointerDown(p);
+    onMove_p(evTarget, p);
+    onPointerDown_p(evTarget, p);
     
   } else {
     // For mouse events
     event = event as MouseEvent;
-    onPointerDown({x:event.clientX, y:event.clientY});
+    onPointerDown_p(evTarget, {x:event.clientX, y:event.clientY});
   }
 } 
 
@@ -70,6 +73,7 @@ var vis = (function(){
 })();
 
 
+let pData:transfmData, sData:transfmData;
 let prevX=0, prevY=0;
 let clientPos = {x:0, y:0};
 let tooltipTimer:any = -1;
@@ -351,10 +355,16 @@ function activateTooltip() {
   }
   else activeType = -1;
 }
-function onMove(ev:Point) {
+
+function getTransfmData(target:HTMLCanvasElement) 
+{
+  return target==pCanv?pData:sData;
+}
+
+function onMove_p(target:HTMLCanvasElement, ev:Point) {
   clientPos = {x:ev.x, y:ev.y};
-  currPos_canv = fromCanvPos(ev.x, ev.y);
-  if (holdState == K.HOLD_None) {
+  currPos_canv = fromCanvPos(getTransfmData(target), ev.x, ev.y);
+  if (holdState == K.HOLD_None && target == pCanv) {
     activeType = -1;
     let nearestL2 = nearestLooper(currPos_canv, K.SIZE_Looper);
     let nearestL = nearestLoop(currPos_canv, K.SIZE_Loop);
@@ -368,47 +378,54 @@ function onMove(ev:Point) {
         tooltipTimer = setTimeout(activateTooltip, K.TIME_Tooltip);
     }
   }
-  if (holdState == K.HOLD_Translate) {
-    translate(pCtx, ev.x - prevX, ev.y - prevY);
+  if (holdState == K.HOLD_TranslateP || holdState == K.HOLD_TranslateS) {
+    translate(getTransfmData(target), ev.x - prevX, ev.y - prevY);
     prevX = ev.x;
     prevY = ev.y;
     redraw();
   }
 }
-function onPointerDown(ev:Point) {
-  currPos_canv = fromCanvPos(ev.x, ev.y);
-  let nL = nearestLoop(currPos_canv, K.SIZE_Loop)
-  if (!nL) {
-    modifLoop = null;
-    UIRefreshRequest = K.UIREFRESH_All;
-  }
-  if (activeBuilding >= 0) {
-    if (nL) {
-      if (nL.building) ephemeralDialog("A building already exists here!");
-      else build(buildingTypes[activeBuilding], nL);
+function onPointerDown_p(target:HTMLCanvasElement, ev:Point) {
+  currPos_canv = fromCanvPos(getTransfmData(target), ev.x, ev.y);
+  if (target == pCanv) {
+    let nL = nearestLoop(currPos_canv, K.SIZE_Loop)
+    if (!nL) {
+      modifLoop = null;
+      UIRefreshRequest = K.UIREFRESH_All;
     }
-    setActiveBuilding(-1);
-  }
-  else if (nL) {
-    modifLoop = nL; 
-    UIRefreshRequest = K.UIREFRESH_All;
+    if (activeBuilding >= 0) {
+      if (nL) {
+        if (nL.building) ephemeralDialog("A building already exists here!");
+        else build(buildingTypes[activeBuilding], nL);
+      }
+      setActiveBuilding(-1);
+    }
+    else if (nL) {
+      modifLoop = nL; 
+      UIRefreshRequest = K.UIREFRESH_All;
+    }
+    else {
+      prevX = ev.x; prevY = ev.y;
+      pCanv.style.cursor = "all-scroll";
+      holdState = K.HOLD_TranslateP;
+    }
   }
   else {
-    prevX = ev.x;
-    prevY = ev.y;
-
-    pCanv.style.cursor = "all-scroll"
-    holdState = K.HOLD_Translate;
+    prevX = ev.x; prevY = ev.y;
+    sCanv.style.cursor = "all-scroll";
+    holdState = K.HOLD_TranslateS;
   }
   // console.log("pointerdown")
 }
 function onPointerUp(ev:any) {
   holdState = K.HOLD_None;
   pCanv.style.cursor = "default";
+  sCanv.style.cursor = "default";
   // console.log("pointerup")
 }
 function keyUpdate(ev:KeyboardEvent) {}
 function onWheel(ev:WheelEvent) {
+  let target = ev.target as HTMLCanvasElement;
   // larger -ve deltaY: 
   // ctx.
   // let sclFac = (ev.deltaY<0?Math.pow(10, -ev.deltaY/750):Math.pow(10, -ev.deltaY/400))
@@ -421,9 +438,9 @@ function onWheel(ev:WheelEvent) {
   if (gameLost) 
     activeCtx = sCtx;
   else activeCtx = pCtx;
-  translate(activeCtx, -ev.clientX, -ev.clientY);
-  scale(activeCtx, sclFac);
-  translate(activeCtx, ev.clientX, ev.clientY);
+  translate(getTransfmData(target), -ev.clientX, -ev.clientY);
+  scale(getTransfmData(target), sclFac);
+  translate(getTransfmData(target), ev.clientX, ev.clientY);
   totalScaleFac *= sclFac;
   redraw();
 } // onwheel

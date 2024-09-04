@@ -1,7 +1,8 @@
 "use strict";
 const K = {
     HOLD_None: 0,
-    HOLD_Translate: 1,
+    HOLD_TranslateP: 1,
+    HOLD_TranslateS: 2,
     COLOUR_Default: "#444",
     COLOUR_Loop: "#666",
     COLOUR_Building: "#0000cc",
@@ -143,8 +144,10 @@ let stressNotification = true;
 let nextRound = K.TIME_Round;
 let pauseStart = -1;
 let tickCounter_lastTime = Date.now();
-let canv;
-let ctx;
+let pCanv;
+let sCanv;
+let pCtx;
+let sCtx;
 function timeNow() {
     return globalTicks;
 }
@@ -169,9 +172,15 @@ function togglePause() {
     paused = !paused;
 }
 function preLoad() {
-    registerMaximisingCanvas("canv", 1, 1, redraw);
+    pCanv = byId("canv");
+    pCtx = pCanv.getContext("2d");
+    pData = { ctx: pCtx, transfm: [1, 0, 0, 0, 1, 0] };
+    sCanv = byId("postgamecanv");
+    sCtx = sCanv.getContext("2d");
+    sData = { ctx: sCtx, transfm: [1, 0, 0, 0, 1, 0] };
+    registerTransformableCanvas("canv", redraw);
+    registerTransformableCanvas("postgamecanv", pgredraw);
     registerEvents();
-    translate(canv.width / 2, canv.height / 2);
     let sidebar = byId("sidebar");
     for (let i = 0; i < buildingTypes.length; i++) {
         let ty = buildingTypes[i];
@@ -184,7 +193,6 @@ function preLoad() {
     <b id="cost${i}">${ty.cost} energy</b><br>
     <p class="preserveLines">${ty.genDesc}</p></div>`;
     }
-    setInterval(redraw, K.TIME_Refresh);
     setInterval(() => {
         if (!paused) {
             globalTicks += Date.now() - tickCounter_lastTime;
@@ -414,16 +422,21 @@ function newRound() {
         addRandomLoop();
 }
 function registerMaximisingCanvas(id, widthPc, heightPc, redrawFcn) {
-    canv = byId(id);
-    ctx = canv.getContext("2d");
+    let c = byId(id);
     window.addEventListener("resize", (ev) => {
-        canv.width = window.innerWidth * widthPc;
-        canv.height = window.innerHeight * heightPc;
-        applyTransfm();
+        c.width = window.innerWidth * widthPc;
+        c.height = window.innerHeight * heightPc;
+        applyTransfm(getTransfmData(c));
         redrawFcn();
     });
-    canv.width = window.innerWidth * widthPc;
-    canv.height = window.innerHeight * heightPc;
+    c.width = window.innerWidth * widthPc;
+    c.height = window.innerHeight * heightPc;
     redrawFcn();
+}
+function registerTransformableCanvas(id, redrawFcn) {
+    let c = byId(id);
+    registerMaximisingCanvas(id, 1, 1, redrawFcn);
+    translate(getTransfmData(c), c.width / 2, c.height / 2);
+    setInterval(redrawFcn, K.TIME_Refresh);
 }
 //# sourceMappingURL=game.js.map

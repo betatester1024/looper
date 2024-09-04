@@ -1,14 +1,19 @@
 "use strict";
 function registerEvents() {
-    canv.addEventListener("mousemove", evRedirector_pMove);
-    canv.addEventListener("touchmove", evRedirector_pMove);
-    canv.addEventListener("mousedown", evRedirector_pDown);
-    canv.addEventListener("touchstart", evRedirector_pDown);
+    pCanv.addEventListener("mousemove", evRedirector_pMove);
+    pCanv.addEventListener("touchmove", evRedirector_pMove);
+    pCanv.addEventListener("mousedown", evRedirector_pDown);
+    pCanv.addEventListener("touchstart", evRedirector_pDown);
+    sCanv.addEventListener("mousemove", evRedirector_pMove);
+    sCanv.addEventListener("touchmove", evRedirector_pMove);
+    sCanv.addEventListener("mousedown", evRedirector_pDown);
+    sCanv.addEventListener("touchstart", evRedirector_pDown);
     window.addEventListener("keydown", keyUpdate);
     window.addEventListener("keyup", keyUpdate);
     window.addEventListener("mouseup", onPointerUp);
     window.addEventListener("touchend", onPointerUp);
-    canv.addEventListener("wheel", onWheel);
+    pCanv.addEventListener("wheel", onWheel);
+    sCanv.addEventListener("wheel", onWheel);
     setInterval(uiEvents, 100);
     vis(() => {
         if (!vis() && !paused)
@@ -16,27 +21,29 @@ function registerEvents() {
     });
 }
 function evRedirector_pMove(event) {
+    let evTarget = event.target;
     if (event.type.startsWith('touch')) {
         event.preventDefault();
         event = event;
-        onMove({ x: event.touches[0].clientX, y: event.touches[0].clientY });
+        onMove_p(evTarget, { x: event.touches[0].clientX, y: event.touches[0].clientY });
     }
     else {
         event = event;
-        onMove({ x: event.clientX, y: event.clientY });
+        onMove_p(evTarget, { x: event.clientX, y: event.clientY });
     }
 }
 function evRedirector_pDown(event) {
+    let evTarget = event.target;
     if (event.type.startsWith('touch')) {
         event.preventDefault();
         event = event;
         let p = { x: event.touches[0].clientX, y: event.touches[0].clientY };
-        onMove(p);
-        onPointerDown(p);
+        onMove_p(evTarget, p);
+        onPointerDown_p(evTarget, p);
     }
     else {
         event = event;
-        onPointerDown({ x: event.clientX, y: event.clientY });
+        onPointerDown_p(evTarget, { x: event.clientX, y: event.clientY });
     }
 }
 var vis = (function () {
@@ -58,6 +65,7 @@ var vis = (function () {
         return !document[stateKey];
     };
 })();
+let pData, sData;
 let prevX = 0, prevY = 0;
 let clientPos = { x: 0, y: 0 };
 let tooltipTimer = -1;
@@ -343,17 +351,20 @@ function activateTooltip() {
     else
         activeType = -1;
 }
-function onMove(ev) {
+function getTransfmData(target) {
+    return target == pCanv ? pData : sData;
+}
+function onMove_p(target, ev) {
     clientPos = { x: ev.x, y: ev.y };
-    currPos_canv = fromCanvPos(ev.x, ev.y);
-    if (holdState == K.HOLD_None) {
+    currPos_canv = fromCanvPos(getTransfmData(target), ev.x, ev.y);
+    if (holdState == K.HOLD_None && target == pCanv) {
         activeType = -1;
         let nearestL2 = nearestLooper(currPos_canv, K.SIZE_Looper);
         let nearestL = nearestLoop(currPos_canv, K.SIZE_Loop);
         if (nearestL || paused && nearestL2)
-            canv.style.cursor = "pointer";
+            pCanv.style.cursor = "pointer";
         else
-            canv.style.cursor = "";
+            pCanv.style.cursor = "";
         if (tooltipTimer < 0 && nearestL || paused && nearestL2) {
             tooltipTimer = setTimeout(activateTooltip, K.TIME_Tooltip);
         }
@@ -363,54 +374,69 @@ function onMove(ev) {
                 tooltipTimer = setTimeout(activateTooltip, K.TIME_Tooltip);
         }
     }
-    if (holdState == K.HOLD_Translate) {
-        translate(ev.x - prevX, ev.y - prevY);
+    if (holdState == K.HOLD_TranslateP || holdState == K.HOLD_TranslateS) {
+        translate(getTransfmData(target), ev.x - prevX, ev.y - prevY);
         prevX = ev.x;
         prevY = ev.y;
         redraw();
     }
 }
-function onPointerDown(ev) {
-    currPos_canv = fromCanvPos(ev.x, ev.y);
-    let nL = nearestLoop(currPos_canv, K.SIZE_Loop);
-    if (!nL) {
-        modifLoop = null;
-        UIRefreshRequest = K.UIREFRESH_All;
-    }
-    if (activeBuilding >= 0) {
-        if (nL) {
-            if (nL.building)
-                ephemeralDialog("A building already exists here!");
-            else
-                build(buildingTypes[activeBuilding], nL);
+function onPointerDown_p(target, ev) {
+    currPos_canv = fromCanvPos(getTransfmData(target), ev.x, ev.y);
+    if (target == pCanv) {
+        let nL = nearestLoop(currPos_canv, K.SIZE_Loop);
+        if (!nL) {
+            modifLoop = null;
+            UIRefreshRequest = K.UIREFRESH_All;
         }
-        setActiveBuilding(-1);
-    }
-    else if (nL) {
-        modifLoop = nL;
-        UIRefreshRequest = K.UIREFRESH_All;
+        if (activeBuilding >= 0) {
+            if (nL) {
+                if (nL.building)
+                    ephemeralDialog("A building already exists here!");
+                else
+                    build(buildingTypes[activeBuilding], nL);
+            }
+            setActiveBuilding(-1);
+        }
+        else if (nL) {
+            modifLoop = nL;
+            UIRefreshRequest = K.UIREFRESH_All;
+        }
+        else {
+            prevX = ev.x;
+            prevY = ev.y;
+            pCanv.style.cursor = "all-scroll";
+            holdState = K.HOLD_TranslateP;
+        }
     }
     else {
         prevX = ev.x;
         prevY = ev.y;
-        canv.style.cursor = "all-scroll";
-        holdState = K.HOLD_Translate;
+        sCanv.style.cursor = "all-scroll";
+        holdState = K.HOLD_TranslateS;
     }
 }
 function onPointerUp(ev) {
     holdState = K.HOLD_None;
-    canv.style.cursor = "default";
+    pCanv.style.cursor = "default";
+    sCanv.style.cursor = "default";
 }
 function keyUpdate(ev) { }
 function onWheel(ev) {
+    let target = ev.target;
     let sclFac = (ev.deltaY < 0 ? 1.15 : 1 / 1.15);
     if (sclFac * totalScaleFac > maxSclFac)
         sclFac = maxSclFac / totalScaleFac;
     if (sclFac * totalScaleFac < minSclFac)
         sclFac = minSclFac / totalScaleFac;
-    translate(-ev.clientX, -ev.clientY);
-    scale(sclFac);
-    translate(ev.clientX, ev.clientY);
+    let activeCtx;
+    if (gameLost)
+        activeCtx = sCtx;
+    else
+        activeCtx = pCtx;
+    translate(getTransfmData(target), -ev.clientX, -ev.clientY);
+    scale(getTransfmData(target), sclFac);
+    translate(getTransfmData(target), ev.clientX, ev.clientY);
     totalScaleFac *= sclFac;
     redraw();
 }

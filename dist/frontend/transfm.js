@@ -16,27 +16,25 @@ function withinViewport(newPt) {
 }
 function updateMinScl(newVal = minSclFac) {
     minSclFac = newVal;
-    viewportW = canv.width / minSclFac * 0.4;
-    viewportH = canv.height / minSclFac * 0.4;
+    viewportW = pCanv.width / minSclFac * 0.4;
+    viewportH = pCanv.height / minSclFac * 0.4;
     viewportMax = Math.max(viewportW, viewportH);
     viewportMin = Math.min(viewportW, viewportH);
 }
-let transfm = [1, 0, 0,
-    0, 1, 0];
-function translate(x, y) {
-    transfm[2] += x;
-    transfm[5] += y;
-    applyTransfm();
+function translate(data, x, y) {
+    data.transfm[2] += x;
+    data.transfm[5] += y;
+    applyTransfm(data);
 }
-function fromCanvPos(canvX, canvY) {
-    return { x: (canvX - transfm[2]) / transfm[0], y: (canvY - transfm[5]) / transfm[4] };
+function fromCanvPos(data, canvX, canvY) {
+    return { x: (canvX - data.transfm[2]) / data.transfm[0], y: (canvY - data.transfm[5]) / data.transfm[4] };
 }
-function scale(scl) {
+function scale(data, scl) {
     for (let i = 0; i < 6; i++)
-        transfm[i] *= scl;
-    applyTransfm();
+        data.transfm[i] *= scl;
+    applyTransfm(data);
 }
-function applyTransfm() {
-    ctx.setTransform(transfm[0], transfm[3], transfm[1], transfm[4], transfm[2], transfm[5]);
+function applyTransfm(data) {
+    data.ctx.setTransform(data.transfm[0], data.transfm[3], data.transfm[1], data.transfm[4], data.transfm[2], data.transfm[5]);
 }
 //# sourceMappingURL=transfm.js.map
